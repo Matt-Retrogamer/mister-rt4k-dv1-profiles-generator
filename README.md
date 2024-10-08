@@ -157,7 +157,7 @@ The script will generate `.rt4` profile files in the following directory:
 - **Base Profile Not Found**: Verify that the path to the base profile is correct and that the file exists.
 - **Permission Denied**: Ensure that you have the necessary permissions to read from the source directories and write to the destination directory.
 - **No Profiles Generated**: Check that the source directories contain the expected `.rbf` or `.zip` files.
-- **Script Exits Immediately**: Ensure you are using Bash 4.0 or higher.
+- **Script Exits Immediately**: Ensure you are using Bash 3.0 or higher.
 
 ## Contributing
 
