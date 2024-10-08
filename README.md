@@ -40,7 +40,7 @@ By scanning your MiSTer directories for console, arcade, computer, and utility c
 ## Requirements
 
 - **Operating System**: Linux or any Unix-like system with Bash.
-- **Bash Version**: Bash 4.0 or higher.
+- **Bash Version**: Bash 3.0 or higher.
 - **Dependencies**: None (uses standard Unix utilities like `cp`, `mv`, etc.).
 
 ## Installation

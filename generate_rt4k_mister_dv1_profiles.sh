@@ -199,26 +199,36 @@ additional_handling() {
   fi
 
   # Portables/Specific profiles
-  declare -A portables=(
-    ["GBA"]="$PRF_GBA"
-    ["GBC"]="$PRF_GBC"
-  )
 
-  for portable in "${!portables[@]}"; do
-    dest_profile="${RT4K}profile/DV1/${portable}.rt4"
-    if [ ! -f "$dest_profile" ]; then
-      log "Creating ${portable}.rt4 profile"
-      if cp "${portables[$portable]}" "$dest_profile"; then
-        ((created_profiles++))
-      else
-        echo "Error: Failed to create ${portable}.rt4 profile"
-        ((errors++))
-      fi
+  # Handle GBA
+  dest_profile="${RT4K}profile/DV1/GBA.rt4"
+  if [ ! -f "$dest_profile" ]; then
+    log "Creating GBA.rt4 profile"
+    if cp "$PRF_GBA" "$dest_profile"; then
+      ((created_profiles++))
     else
-      log "${portable}.rt4 already exists. Skipping."
-      ((skipped_profiles++))
+      echo "Error: Failed to create GBA.rt4 profile"
+      ((errors++))
     fi
-  done
+  else
+    log "GBA.rt4 already exists. Skipping."
+    ((skipped_profiles++))
+  fi
+
+  # Handle GBC
+  dest_profile="${RT4K}profile/DV1/GBC.rt4"
+  if [ ! -f "$dest_profile" ]; then
+    log "Creating GBC.rt4 profile"
+    if cp "$PRF_GBC" "$dest_profile"; then
+      ((created_profiles++))
+    else
+      echo "Error: Failed to create GBC.rt4 profile"
+      ((errors++))
+    fi
+  else
+    log "GBC.rt4 already exists. Skipping."
+    ((skipped_profiles++))
+  fi
 }
 
 # Main script execution
