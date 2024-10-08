@@ -3,6 +3,8 @@
 
 This script automates the process of updating and replacing all the Retrotink 4K profiles created by **Wobbling Pixels** on your Retrotink 4K SD card.
 
+The latest Wobbling Pixels profiles can be found here: https://drive.google.com/drive/folders/1vMn27wOXiCCT9tSqCKr89IhdP3nXP-V5
+
 ## Usage
 
 ```bash

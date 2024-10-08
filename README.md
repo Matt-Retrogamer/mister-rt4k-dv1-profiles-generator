@@ -42,6 +42,11 @@ By scanning your MiSTer directories for console, arcade, computer, and utility c
 - **Operating System**: Linux or any Unix-like system with Bash.
 - **Bash Version**: Bash 3.0 or higher.
 - **Dependencies**: None (uses standard Unix utilities like `cp`, `mv`, etc.).
+- **RetroTink 4K**: Up to date SDCard with the latest profiles installed:
+  * The latest Kuro Houou profiles can be found here: https://drive.google.com/drive/folders/1zxQqn36P6QPx3mu83SuNplTbbwID1YA2
+  * The latest Wobbling Pixels profiles can be found here: https://drive.google.com/drive/folders/1vMn27wOXiCCT9tSqCKr89IhdP3nXP-V5
+  * You can use the tools avalaible in this project to inject them into your RT4K SDCard
+- **MiSTer FPGA**: Up to date SDCard with the latest core updates.
 
 ## Installation
 
