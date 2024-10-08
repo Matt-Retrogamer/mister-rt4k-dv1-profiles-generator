@@ -1,1 +1,5 @@
 tests/
+data/rt4k/*
+!data/rt4k/PLEASE_PUT_THE_CONTENT_OF_THE_RT4K_SDCARD_HERE
+data/mister/*
+!data/mister/PLEASE_PUT_THE_CONTENT_OF_THE_MISTER_SDCARD_HERE
