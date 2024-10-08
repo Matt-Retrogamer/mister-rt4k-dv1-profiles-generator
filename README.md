@@ -22,6 +22,7 @@ By scanning your MiSTer directories for console, arcade, computer, and utility c
 
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Backup](#backup)
 - [Usage](#usage)
 - [Syntax](#syntax)
 - [Options](#options)
@@ -62,6 +63,10 @@ By scanning your MiSTer directories for console, arcade, computer, and utility c
    ```bash
    chmod +x generate_rt4k_mister_dv1_profiles.sh
    ```
+
+## Backup
+
+- **Backup your SD cards** before running the script(s).
 
 ## Usage
 
