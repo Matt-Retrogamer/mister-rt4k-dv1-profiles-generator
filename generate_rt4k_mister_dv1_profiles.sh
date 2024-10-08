@@ -13,8 +13,8 @@ set -eu
 #   -m, --mister PATH   Set MiSTer root path
 
 # Default paths (can be overridden by command-line arguments or environment variables)
-RT4K="${RT4K:-/media/rt4k/}"
-MISTER="${MISTER:-/media/mister/}"
+RT4K="${RT4K:-data/rt4k/}"
+MISTER="${MISTER:-data/mister/}"
 VERBOSE=0
 
 # Function to show help message
