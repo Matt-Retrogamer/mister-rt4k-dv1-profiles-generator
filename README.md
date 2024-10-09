@@ -1,16 +1,17 @@
-
 # MiSTer RT4K DV1 Profiles Generator
 
 ## Description
 
-The **MiSTer RT4K DV1 Profiles Generator** is a Bash script designed to automate the replication of profile files (.rt4) for the RetroTINK 4K device, specifically for use with the MiSTer FPGA system. This script simplifies the process of generating profiles for various MiSTer cores, ensuring that your RetroTINK 4K is correctly configured to display them.
+The **MiSTer RT4K DV1 Profiles Generator** is a Bash script designed to automate the replication of profile files (`.rt4`) for the RetroTINK 4K device, specifically for use with the MiSTer FPGA system. This script simplifies the process of generating profiles for various MiSTer cores, ensuring that your RetroTINK 4K is correctly configured to display them.
 
-By scanning your MiSTer directories for console, arcade, computer, and utility cores, the script creates corresponding profile files in the `profiles/DV1/` directory on your RetroTINK 4K SD card. It handles special cases, allows for additional custom profiles, and includes options for customization and verbose output.
+By scanning your MiSTer directories—either locally or remotely via SSH—for console, arcade, computer, and utility cores, the script creates corresponding profile files in the `profiles/DV1/` directory on your RetroTINK 4K SD card. It handles special cases, allows for additional custom profiles, and includes options for customization and verbose output.
 
 ## Features
 
-- **Automated Profile Generation**: Scans MiSTer core directories and creates corresponding .rt4 profiles.
+- **Automated Profile Generation**: Scans MiSTer core directories and creates corresponding `.rt4` profiles.
 - **Supports Multiple Core Types**: Handles console, arcade, computer, and utility cores.
+- **SSH Remote Retrieval**: Optionally retrieves core names from a remote MiSTer device via SSH, eliminating the need to remove the SD card.
+- **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
@@ -24,16 +25,18 @@ By scanning your MiSTer directories for console, arcade, computer, and utility c
 - [Installation](#installation)
 - [Backup](#backup)
 - [Usage](#usage)
-- [Syntax](#syntax)
-- [Options](#options)
-- [Examples](#examples)
+  - [Syntax](#syntax)
+  - [Options](#options)
+  - [Examples](#examples)
 - [Configuration](#configuration)
-- [Base Profiles](#base-profiles)
+  - [Environment Variables](#environment-variables)
+  - [Base Profiles](#base-profiles)
 - [Additional Arcade Profiles](#additional-arcade-profiles)
 - [Output](#output)
 - [Logging and Verbose Mode](#logging-and-verbose-mode)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
+  - [Steps to Contribute](#steps-to-contribute)
 - [Todo](#todo)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
@@ -44,11 +47,12 @@ By scanning your MiSTer directories for console, arcade, computer, and utility c
 - **Operating System**: Linux or any Unix-like system with Bash.
 - **Bash Version**: Bash 3.0 or higher.
 - **Dependencies**: None (uses standard Unix utilities like `cp`, `mv`, etc.).
-- **RetroTink 4K**: Up to date SDCard with the latest profiles installed:
-  * The latest Kuro Houou profiles can be found here: https://drive.google.com/drive/folders/1zxQqn36P6QPx3mu83SuNplTbbwID1YA2
-  * The latest Wobbling Pixels profiles can be found here: https://drive.google.com/drive/folders/1vMn27wOXiCCT9tSqCKr89IhdP3nXP-V5
-  * You can use the tools avalaible in this project to inject them into your RT4K SDCard
-- **MiSTer FPGA**: Up to date SDCard with the latest core updates.
+- **SSH Access** (optional): For remote retrieval of core names, SSH access to the MiSTer device is required.
+  - **SSH Keys**: Recommended for password-less authentication.
+- **RetroTINK 4K**: Up-to-date SD card with the latest profiles installed:
+  - **Kuro Houou Profiles**: [Google Drive Link](https://drive.google.com/drive/folders/1zxQqn36P6QPx3mu83SuNplTbbwID1YA2)
+  - **Wobbling Pixels Profiles**: [Google Drive Link](https://drive.google.com/drive/folders/1vMn27wOXiCCT9tSqCKr89IhdP3nXP-V5)
+- **MiSTer FPGA**: Up-to-date SD card with the latest core updates.
 
 ## Installation
 
@@ -82,7 +86,7 @@ By scanning your MiSTer directories for console, arcade, computer, and utility c
 - `-h`, `--help` : Show help message and exit.
 - `-v`, `--verbose` : Enable verbose output.
 - `-r`, `--rt4k PATH` : Set RetroTINK 4K SD card root path.
-- `-m`, `--mister PATH` : Set MiSTer root path.
+- `-m`, `--mister PATH` : Set MiSTer root path (local path or SSH URL).
 
 ## Examples
 
@@ -98,7 +102,24 @@ By scanning your MiSTer directories for console, arcade, computer, and utility c
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --verbose
    ```
-4. **Display Help Message**:
+4. **Specify Remote MiSTer via SSH (using defaults):**:
+   ```bash
+   ./generate_rt4k_mister_dv1_profiles.sh --rt4k /media/rt4k/ --mister ssh://192.168.1.100
+   ```
+	- SSH user defaults to root.
+	- MiSTer path defaults to /media/fat/.
+
+5. **Specify SSH User and Host:**:
+   ```bash
+   ./generate_rt4k_mister_dv1_profiles.sh --rt4k /media/rt4k/ --mister ssh://user@hostname
+   ```
+
+6. **Specify SSH User, Host, and Custom MiSTer Path:**:
+   ```bash
+   ./generate_rt4k_mister_dv1_profiles.sh --rt4k /media/rt4k/ --mister ssh://user@hostname:/custom/path --verbose
+   ```
+
+7. **Display Help Message**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --help
    ```
@@ -160,10 +181,21 @@ The script will generate `.rt4` profile files in the following directory:
 
 ## Troubleshooting
 
-- **Base Profile Not Found**: Verify that the path to the base profile is correct and that the file exists.
-- **Permission Denied**: Ensure that you have the necessary permissions to read from the source directories and write to the destination directory.
-- **No Profiles Generated**: Check that the source directories contain the expected `.rbf` or `.zip` files.
-- **Script Exits Immediately**: Ensure you are using Bash 3.0 or higher.
+- **SSH Connectivity Issues**:
+  - Ensure you can SSH into your MiSTer device without password prompts.
+  - Set up SSH keys for password-less authentication.
+
+- **Base Profile Not Found**:
+  - Verify that the path to the base profile is correct and that the file exists.
+
+- **Permission Denied**:
+  - Ensure that you have the necessary permissions to read from the source directories and write to the destination directory.
+
+- **No Profiles Generated**:
+  - Check that the source directories contain the expected `.rbf` or `.zip` files.
+
+- **Script Exits Immediately**:
+  - Ensure you are using Bash 3.0 or higher.
 
 ## Contributing
 
@@ -189,7 +221,7 @@ Contributions are welcome! Please open an issue or submit a pull request if you 
 ## TODO
 
 - [ ] Fix script execution on Linux bash (works only on mac bash currently)
-- [ ] Feature: add SSH remote retrieval of the core names on the MiSTer (allows execution without removing the SD card from the MiSTer)
+- [X] Feature: add SSH remote retrieval of the core names on the MiSTer (allows execution without removing the SD card from the MiSTer)
 - [ ] Feature: Add DV1 Arcade profiles management. Read MiSTer MRA file and create DV1 Arcade list based on `<setname>` (e.g., `sfa2.zip` > `sfa2.rt4`)
 
 ## License

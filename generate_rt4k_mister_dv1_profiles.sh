@@ -10,7 +10,7 @@ set -eu
 #   -h, --help          Show help message and exit
 #   -v, --verbose       Enable verbose output
 #   -r, --rt4k PATH     Set RT4K SD Card root path
-#   -m, --mister PATH   Set MiSTer root path
+#   -m, --mister PATH   Set MiSTer root path (local path or SSH URL)
 
 # Default paths (can be overridden by command-line arguments or environment variables)
 RT4K="${RT4K:-data/rt4k/}"
@@ -24,9 +24,11 @@ show_help() {
   echo "  -h, --help          Show help message and exit"
   echo "  -v, --verbose       Enable verbose output"
   echo "  -r, --rt4k PATH     Set RT4K SD Card root path"
-  echo "  -m, --mister PATH   Set MiSTer root path"
-  echo "Example:"
-  echo "  $0 --rt4k /media/rt4k/ --mister /media/mister/ --verbose"
+  echo "  -m, --mister PATH   Set MiSTer root path (local path or SSH URL)"
+  echo "Examples:"
+  echo "  $0 --rt4k /media/rt4k/ --mister /media/fat/ --verbose"
+  echo "  $0 --rt4k /media/rt4k/ --mister ssh://192.168.1.100 --verbose"
+  echo "  $0 --rt4k /media/rt4k/ --mister ssh://user@hostname --verbose"
 }
 
 # Parse command-line arguments
@@ -70,11 +72,63 @@ if [ -z "$RT4K" ] || [ ! -d "$RT4K" ]; then
   exit 1
 fi
 
+# Determine if MISTER path is remote
+if [[ "$MISTER" == ssh://* ]]; then
+  REMOTE_MISTER=1
+  MISTER_SSH_URL="${MISTER#ssh://}"
+  # Default values
+  SSH_USER="root"
+  MISTER_PATH="/media/fat/"
+  
+  # Extract SSH_USER and MISTER_SSH_REST
+  if [[ "$MISTER_SSH_URL" == *@* ]]; then
+    SSH_USER="${MISTER_SSH_URL%%@*}"
+    MISTER_SSH_REST="${MISTER_SSH_URL#*@}"
+  else
+    MISTER_SSH_REST="$MISTER_SSH_URL"
+  fi
+  
+  # Extract SSH_HOST and MISTER_PATH
+  if [[ "$MISTER_SSH_REST" == *:* ]]; then
+    SSH_HOST="${MISTER_SSH_REST%%:*}"
+    MISTER_PATH_TMP="${MISTER_SSH_REST#*:}"
+    if [ -n "$MISTER_PATH_TMP" ]; then
+      MISTER_PATH="$MISTER_PATH_TMP"
+    fi
+  else
+    SSH_HOST="$MISTER_SSH_REST"
+  fi
+else
+  REMOTE_MISTER=0
+  MISTER_PATH="$MISTER"
+fi
+
+# Debug output
+log "MiSTer Path: $MISTER_PATH"
+if [ "$REMOTE_MISTER" -eq 1 ]; then
+  log "Remote MiSTer detected."
+  log "SSH User: $SSH_USER"
+  log "SSH Host: $SSH_HOST"
+fi
+
 # Check if MiSTer path is set and exists
-if [ -z "$MISTER" ] || [ ! -d "$MISTER" ]; then
-  echo "Error: MiSTer root path not set or does not exist."
+if [ -z "$MISTER_PATH" ]; then
+  echo "Error: MiSTer root path not set."
   echo "Please set it using the --mister option or MISTER environment variable."
   exit 1
+fi
+
+if [ "$REMOTE_MISTER" -eq 1 ]; then
+  # Check if remote directory exists
+  if ! ssh "${SSH_USER}@${SSH_HOST}" "[ -d \"$MISTER_PATH\" ]"; then
+    echo "Error: MiSTer root path does not exist on remote host."
+    exit 1
+  fi
+else
+  if [ ! -d "$MISTER_PATH" ]; then
+    echo "Error: MiSTer root path does not exist."
+    exit 1
+  fi
 fi
 
 # Set Base Profiles (Console, Arcade, Portables)
@@ -96,6 +150,27 @@ created_profiles=0
 skipped_profiles=0
 errors=0
 
+# Function to get file list (handles local and remote paths)
+get_file_list() {
+  local path="$1"
+  local ext="$2"
+  if [ "$REMOTE_MISTER" -eq 1 ]; then
+    ssh "${SSH_USER}@${SSH_HOST}" "find \"$path\" -maxdepth 1 -type f -name '*.$ext' -printf '%f\n'" 2>/dev/null || true
+  else
+    find "$path" -maxdepth 1 -type f -name "*.$ext" -printf '%f\n' 2>/dev/null || true
+  fi
+}
+
+# Function to check if directory exists (handles local and remote paths)
+directory_exists() {
+  local path="$1"
+  if [ "$REMOTE_MISTER" -eq 1 ]; then
+    ssh "${SSH_USER}@${SSH_HOST}" "[ -d \"$path\" ]"
+  else
+    [ -d "$path" ]
+  fi
+}
+
 # Function to process cores
 process_cores() {
   local core_type="$1"
@@ -104,17 +179,18 @@ process_cores() {
   local file_ext="$4"
   local delimiter="$5"
 
-  local source_path="${MISTER}${source_dir}"
-  if [ ! -d "$source_path" ]; then
+  local source_path="${MISTER_PATH}${source_dir}"
+  if ! directory_exists "$source_path"; then
     log "Warning: Source directory not found: $source_path"
     return
   fi
 
-  for f in "$source_path"*."$file_ext"; do
+  # Get file list
+  mapfile -t files < <(get_file_list "$source_path" "$file_ext")
+
+  for filename in "${files[@]}"; do
     # Skip if no files found
-    [ -e "$f" ] || continue
-    # Get the filename without extension
-    filename=$(basename "$f" ".$file_ext")
+    [[ -z "$filename" ]] && continue
     # Extract the core name before the first delimiter
     core_name=${filename%%"$delimiter"*}
     # Destination profile path
