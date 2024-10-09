@@ -155,9 +155,9 @@ get_file_list() {
   local path="$1"
   local ext="$2"
   if [ "$REMOTE_MISTER" -eq 1 ]; then
-    ssh "${SSH_USER}@${SSH_HOST}" "find \"$path\" -maxdepth 1 -type f -name '*.$ext' -printf '%f\n'" 2>/dev/null || true
+    ssh "${SSH_USER}@${SSH_HOST}" "find \"$path\" -maxdepth 1 -type f -name '*.$ext' -exec basename {} \;" 2>/dev/null || true
   else
-    find "$path" -maxdepth 1 -type f -name "*.$ext" -printf '%f\n' 2>/dev/null || true
+    find "$path" -maxdepth 1 -type f -name "*.$ext" -exec basename {} \; 2>/dev/null || true
   fi
 }
 
@@ -185,10 +185,7 @@ process_cores() {
     return
   fi
 
-  # Get file list
-  mapfile -t files < <(get_file_list "$source_path" "$file_ext")
-
-  for filename in "${files[@]}"; do
+  while IFS= read -r filename; do
     # Skip if no files found
     [[ -z "$filename" ]] && continue
     # Extract the core name before the first delimiter
@@ -199,16 +196,16 @@ process_cores() {
     if [ ! -f "$dest_profile" ]; then
       log "Creating profile for ${core_name}"
       if cp "$base_profile" "$dest_profile"; then
-        ((created_profiles++))
+        created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to copy profile for ${core_name}"
-        ((errors++))
+        errors=$((errors + 1))
       fi
     else
       log "${core_name}.rt4 already exists. Skipping."
-      ((skipped_profiles++))
+      skipped_profiles=$((skipped_profiles + 1))
     fi
-  done
+  done < <(get_file_list "$source_path" "$file_ext")
 }
 
 # Function to process additional Arcade profiles from a text file
@@ -230,14 +227,14 @@ process_additional_arcade_profiles() {
     if [ ! -f "$dest_profile" ]; then
       log "Creating additional arcade profile for ${filename}"
       if cp "$PRF_ARCADE" "$dest_profile"; then
-        ((created_profiles++))
+        created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to copy profile for ${filename}"
-        ((errors++))
+        errors=$((errors + 1))
       fi
     else
       log "${filename}.rt4 already exists. Skipping."
-      ((skipped_profiles++))
+      skipped_profiles=$((skipped_profiles + 1))
     fi
   done < "$txt_file"
 }
@@ -249,29 +246,29 @@ additional_handling() {
     if [ -f "${RT4K}profile/DV1/TurboGrafx16.rt4" ]; then
       log "Renaming TurboGrafx16.rt4 to TGFX16.rt4"
       if mv "${RT4K}profile/DV1/TurboGrafx16.rt4" "${RT4K}profile/DV1/TGFX16.rt4"; then
-        ((created_profiles++))
+        created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to rename TurboGrafx16.rt4 to TGFX16.rt4"
-        ((errors++))
+        errors=$((errors + 1))
       fi
     fi
   else
     log "TGFX16.rt4 already exists. Skipping rename."
-    ((skipped_profiles++))
+    skipped_profiles=$((skipped_profiles + 1))
   fi
 
   # Menu Core
   if [ ! -f "${RT4K}profile/DV1/Menu.rt4" ]; then
     log "Creating Menu.rt4 profile"
     if cp "$PRF_ARCADE" "${RT4K}profile/DV1/Menu.rt4"; then
-      ((created_profiles++))
+      created_profiles=$((created_profiles + 1))
     else
       echo "Error: Failed to create Menu.rt4 profile"
-      ((errors++))
+      errors=$((errors + 1))
     fi
   else
     log "Menu.rt4 already exists. Skipping."
-    ((skipped_profiles++))
+    skipped_profiles=$((skipped_profiles + 1))
   fi
 
   # Portables/Specific profiles
@@ -281,14 +278,14 @@ additional_handling() {
   if [ ! -f "$dest_profile" ]; then
     log "Creating GBA.rt4 profile"
     if cp "$PRF_GBA" "$dest_profile"; then
-      ((created_profiles++))
+      created_profiles=$((created_profiles + 1))
     else
       echo "Error: Failed to create GBA.rt4 profile"
-      ((errors++))
+      errors=$((errors + 1))
     fi
   else
     log "GBA.rt4 already exists. Skipping."
-    ((skipped_profiles++))
+    skipped_profiles=$((skipped_profiles + 1))
   fi
 
   # Handle GBC
@@ -296,14 +293,14 @@ additional_handling() {
   if [ ! -f "$dest_profile" ]; then
     log "Creating GBC.rt4 profile"
     if cp "$PRF_GBC" "$dest_profile"; then
-      ((created_profiles++))
+      created_profiles=$((created_profiles + 1))
     else
       echo "Error: Failed to create GBC.rt4 profile"
-      ((errors++))
+      errors=$((errors + 1))
     fi
   else
     log "GBC.rt4 already exists. Skipping."
-    ((skipped_profiles++))
+    skipped_profiles=$((skipped_profiles + 1))
   fi
 }
 
