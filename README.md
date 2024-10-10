@@ -14,6 +14,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
+- **Force Overwrite**: Option to forcefully recreate and overwrite existing profiles with the `--force` flag.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
 - **User-Friendly Options**: Command-line arguments and environment variables for easy customization.
 - **Verbose Output**: Optional verbose mode for detailed logging.
@@ -88,6 +89,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - `-v`, `--verbose` : Enable verbose output.
 - `-r`, `--rt4k PATH` : Set RetroTINK 4K SD card root path.
 - `-m`, `--mister PATH` : Set MiSTer root path (local path or SSH URL).
+- `-f`, `--force` : Force overwrite of existing profiles.
 
 ## Examples
 
@@ -95,14 +97,17 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh
    ```
+
 2. **Specify Paths via Command-Line Arguments**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --rt4k /path/to/rt4k/ --mister /path/to/mister/
    ```
+
 3. **Enable Verbose Output**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --verbose
    ```
+
 4. **Specify Remote MiSTer via SSH (using defaults):**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --rt4k /media/rt4k/ --mister ssh://192.168.1.100
@@ -120,7 +125,12 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
    ./generate_rt4k_mister_dv1_profiles.sh --rt4k /media/rt4k/ --mister ssh://user@hostname:/custom/path --verbose
    ```
 
-7. **Display Help Message**:
+7. **Force Overwrite of Existing Profiles**:
+   ```bash
+   ./generate_rt4k_mister_dv1_profiles.sh --force
+   ```
+
+8. **Display Help Message**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --help
    ```

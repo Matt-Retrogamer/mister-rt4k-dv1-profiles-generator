@@ -9,6 +9,7 @@ set -eu
 # Options:
 #   -h, --help          Show help message and exit
 #   -v, --verbose       Enable verbose output
+#   -f, --force         Force overwrite of existing profiles
 #   -r, --rt4k PATH     Set RT4K SD Card root path
 #   -m, --mister PATH   Set MiSTer root path (local path or SSH URL)
 
@@ -16,6 +17,7 @@ set -eu
 RT4K="${RT4K:-data/rt4k/}"
 MISTER="${MISTER:-data/mister/}"
 VERBOSE=0
+FORCE=0
 
 # Function to show help message
 show_help() {
@@ -23,12 +25,13 @@ show_help() {
   echo "Options:"
   echo "  -h, --help          Show help message and exit"
   echo "  -v, --verbose       Enable verbose output"
+  echo "  -f, --force         Force overwrite of existing profiles"
   echo "  -r, --rt4k PATH     Set RT4K SD Card root path"
   echo "  -m, --mister PATH   Set MiSTer root path (local path or SSH URL)"
   echo "Examples:"
   echo "  $0 --rt4k /media/rt4k/ --mister /media/fat/ --verbose"
   echo "  $0 --rt4k /media/rt4k/ --mister ssh://192.168.1.100 --verbose"
-  echo "  $0 --rt4k /media/rt4k/ --mister ssh://user@hostname --verbose"
+  echo "  $0 --rt4k /media/rt4k/ --mister ssh://user@hostname --force --verbose"
 }
 
 # Parse command-line arguments
@@ -44,6 +47,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -v|--verbose)
       VERBOSE=1
+      shift
+      ;;
+    -f|--force)
+      FORCE=1
       shift
       ;;
     -h|--help)
@@ -147,6 +154,7 @@ done
 
 # Counters for summary
 created_profiles=0
+overwritten_profiles=0
 skipped_profiles=0
 errors=0
 
@@ -205,18 +213,28 @@ process_cores() {
     # Destination profile path
     dest_profile="${RT4K}profile/DV1/${core_name}.rt4"
 
-    # Check if the profile already exists
-    if [ ! -f "$dest_profile" ]; then
+    # Check if the profile exists
+    if [ -f "$dest_profile" ]; then
+      if [ "$FORCE" -eq 1 ]; then
+        log "Overwriting existing profile for ${core_name}"
+        if cp "$base_profile" "$dest_profile"; then
+          overwritten_profiles=$((overwritten_profiles + 1))
+        else
+          echo "Error: Failed to overwrite profile for ${core_name}"
+          errors=$((errors + 1))
+        fi
+      else
+        log "${core_name}.rt4 already exists. Skipping."
+        skipped_profiles=$((skipped_profiles + 1))
+      fi
+    else
       log "Creating profile for ${core_name}"
       if cp "$base_profile" "$dest_profile"; then
         created_profiles=$((created_profiles + 1))
       else
-        echo "Error: Failed to copy profile for ${core_name}"
+        echo "Error: Failed to create profile for ${core_name}"
         errors=$((errors + 1))
       fi
-    else
-      log "${core_name}.rt4 already exists. Skipping."
-      skipped_profiles=$((skipped_profiles + 1))
     fi
   done < <(get_file_list "$source_path" "$file_ext")
 }
@@ -236,30 +254,44 @@ process_additional_arcade_profiles() {
     [[ -z "$line" || "$line" == \#* ]] && continue
     filename=$(basename "$line" .zip)
     dest_profile="${RT4K}profile/DV1/${filename}.rt4"
-    # Check if the profile already exists
-    if [ ! -f "$dest_profile" ]; then
+    # Check if the profile exists
+    if [ -f "$dest_profile" ]; then
+      if [ "$FORCE" -eq 1 ]; then
+        log "Overwriting existing profile for ${filename}"
+        if cp "$PRF_ARCADE" "$dest_profile"; then
+          overwritten_profiles=$((overwritten_profiles + 1))
+        else
+          echo "Error: Failed to overwrite profile for ${filename}"
+          errors=$((errors + 1))
+        fi
+      else
+        log "${filename}.rt4 already exists. Skipping."
+        skipped_profiles=$((skipped_profiles + 1))
+      fi
+    else
       log "Creating additional arcade profile for ${filename}"
       if cp "$PRF_ARCADE" "$dest_profile"; then
         created_profiles=$((created_profiles + 1))
       else
-        echo "Error: Failed to copy profile for ${filename}"
+        echo "Error: Failed to create profile for ${filename}"
         errors=$((errors + 1))
       fi
-    else
-      log "${filename}.rt4 already exists. Skipping."
-      skipped_profiles=$((skipped_profiles + 1))
     fi
   done < "$txt_file"
 }
 
 # Function for additional handling and specific profiles
 additional_handling() {
-  # Rename TurboGrafx16.rt4 to TGFX16.rt4 if TGFX16.rt4 does not exist
-  if [ ! -f "${RT4K}profile/DV1/TGFX16.rt4" ]; then
+  # Rename TurboGrafx16.rt4 to TGFX16.rt4 if TGFX16.rt4 does not exist or FORCE is set
+  if [ "$FORCE" -eq 1 ] || [ ! -f "${RT4K}profile/DV1/TGFX16.rt4" ]; then
     if [ -f "${RT4K}profile/DV1/TurboGrafx16.rt4" ]; then
       log "Renaming TurboGrafx16.rt4 to TGFX16.rt4"
-      if mv "${RT4K}profile/DV1/TurboGrafx16.rt4" "${RT4K}profile/DV1/TGFX16.rt4"; then
-        created_profiles=$((created_profiles + 1))
+      if mv -f "${RT4K}profile/DV1/TurboGrafx16.rt4" "${RT4K}profile/DV1/TGFX16.rt4"; then
+        if [ "$FORCE" -eq 1 ]; then
+          overwritten_profiles=$((overwritten_profiles + 1))
+        else
+          created_profiles=$((created_profiles + 1))
+        fi
       else
         echo "Error: Failed to rename TurboGrafx16.rt4 to TGFX16.rt4"
         errors=$((errors + 1))
@@ -271,24 +303,48 @@ additional_handling() {
   fi
 
   # Menu Core
-  if [ ! -f "${RT4K}profile/DV1/Menu.rt4" ]; then
+  dest_profile="${RT4K}profile/DV1/Menu.rt4"
+  if [ -f "$dest_profile" ]; then
+    if [ "$FORCE" -eq 1 ]; then
+      log "Overwriting Menu.rt4 profile"
+      if cp "$PRF_ARCADE" "$dest_profile"; then
+        overwritten_profiles=$((overwritten_profiles + 1))
+      else
+        echo "Error: Failed to overwrite Menu.rt4 profile"
+        errors=$((errors + 1))
+      fi
+    else
+      log "Menu.rt4 already exists. Skipping."
+      skipped_profiles=$((skipped_profiles + 1))
+    fi
+  else
     log "Creating Menu.rt4 profile"
-    if cp "$PRF_ARCADE" "${RT4K}profile/DV1/Menu.rt4"; then
+    if cp "$PRF_ARCADE" "$dest_profile"; then
       created_profiles=$((created_profiles + 1))
     else
       echo "Error: Failed to create Menu.rt4 profile"
       errors=$((errors + 1))
     fi
-  else
-    log "Menu.rt4 already exists. Skipping."
-    skipped_profiles=$((skipped_profiles + 1))
   fi
 
   # Portables/Specific profiles
 
   # Handle GBA
   dest_profile="${RT4K}profile/DV1/GBA.rt4"
-  if [ ! -f "$dest_profile" ]; then
+  if [ -f "$dest_profile" ]; then
+    if [ "$FORCE" -eq 1 ]; then
+      log "Overwriting GBA.rt4 profile"
+      if cp "$PRF_GBA" "$dest_profile"; then
+        overwritten_profiles=$((overwritten_profiles + 1))
+      else
+        echo "Error: Failed to overwrite GBA.rt4 profile"
+        errors=$((errors + 1))
+      fi
+    else
+      log "GBA.rt4 already exists. Skipping."
+      skipped_profiles=$((skipped_profiles + 1))
+    fi
+  else
     log "Creating GBA.rt4 profile"
     if cp "$PRF_GBA" "$dest_profile"; then
       created_profiles=$((created_profiles + 1))
@@ -296,14 +352,24 @@ additional_handling() {
       echo "Error: Failed to create GBA.rt4 profile"
       errors=$((errors + 1))
     fi
-  else
-    log "GBA.rt4 already exists. Skipping."
-    skipped_profiles=$((skipped_profiles + 1))
   fi
 
   # Handle GBC
   dest_profile="${RT4K}profile/DV1/GBC.rt4"
-  if [ ! -f "$dest_profile" ]; then
+  if [ -f "$dest_profile" ]; then
+    if [ "$FORCE" -eq 1 ]; then
+      log "Overwriting GBC.rt4 profile"
+      if cp "$PRF_GBC" "$dest_profile"; then
+        overwritten_profiles=$((overwritten_profiles + 1))
+      else
+        echo "Error: Failed to overwrite GBC.rt4 profile"
+        errors=$((errors + 1))
+      fi
+    else
+      log "GBC.rt4 already exists. Skipping."
+      skipped_profiles=$((skipped_profiles + 1))
+    fi
+  else
     log "Creating GBC.rt4 profile"
     if cp "$PRF_GBC" "$dest_profile"; then
       created_profiles=$((created_profiles + 1))
@@ -311,9 +377,6 @@ additional_handling() {
       echo "Error: Failed to create GBC.rt4 profile"
       errors=$((errors + 1))
     fi
-  else
-    log "GBC.rt4 already exists. Skipping."
-    skipped_profiles=$((skipped_profiles + 1))
   fi
 }
 
@@ -333,6 +396,7 @@ main() {
   # Summary
   echo "Profile replication completed."
   echo "Profiles created: $created_profiles"
+  echo "Profiles overwritten: $overwritten_profiles"
   echo "Profiles skipped: $skipped_profiles"
   if [ "$errors" -gt 0 ]; then
     echo "Errors encountered: $errors"
