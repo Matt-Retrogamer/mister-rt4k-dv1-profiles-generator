@@ -293,9 +293,10 @@ Contributions are welcome! Please open an issue or submit a pull request if you 
 
 ## TODO
 
-- [x] Fix script execution on Linux bash (works only on mac bash currently)
+- [x] Fix script execution on Linux Bash
 - [x] Feature: add SSH remote retrieval of the core names on the MiSTer (allows execution without removing the SD card from the MiSTer)
 - [x] Feature: Add DV1 Arcade profiles management. Read MiSTer MRA file and create DV1 Arcade list based on `<setname>` (e.g., `sfa2.zip` > `sfa2.rt4`)
+- [x] Feature: Add override profiles option
 
 ## License
 
