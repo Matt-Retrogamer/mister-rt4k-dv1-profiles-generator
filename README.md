@@ -34,6 +34,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - [Additional Arcade Profiles](#additional-arcade-profiles)
 - [Output](#output)
 - [Logging and Verbose Mode](#logging-and-verbose-mode)
+- [SSH Key-Based Authentication Setup on MiSTer](#ssh-key-based-authentication-setup-on-mister)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
   - [Steps to Contribute](#steps-to-contribute)
@@ -178,6 +179,68 @@ The script will generate `.rt4` profile files in the following directory:
 
 - **Verbose Mode**: Use the `--verbose` or `-v` option to enable detailed output of the script’s actions.
 - **Error Messages**: Any errors encountered will be displayed in the console, regardless of the verbosity setting.
+
+## SSH Key-Based Authentication Setup on MiSTer
+
+Below is a step-by-step guide on setting up SSH key-based authentication between your local machine and your MiSTer device. 
+This will allow you to SSH into your MiSTer without typing a password each time. 
+
+### Setting Up SSH Key-Based Authentication on MiSTer
+For better security, it’s recommended to generate the SSH key pair on your local machine and copy the public key to the MiSTer device.
+If you are familiar with ssh, please also define a pathphrase to be more secure.
+
+#### Prerequisites
+
+- **MiSTer IP Address**: For this example, we’ll use `192.168.0.119`.
+- **Root Access**: You have root access to the MiSTer device.
+- **Local Machine**: The computer from which you will SSH into the MiSTer.
+
+#### Steps:
+
+1. **Generate SSH Key Pair on Local Machine**
+   ```bash
+   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+   ```
+
+2. **When prompted, write it to a specific path and let the pathphrase empty**
+   ```bash
+   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+   Generating public/private rsa key pair.
+   Enter file in which to save the key (~/.ssh/id_rsa): ~/.ssh/id_rsa_mister
+   Enter passphrase (empty for no passphrase): 
+   Enter same passphrase again: 
+   Your identification has been saved in ~/.ssh/id_rsa_mister
+   Your public key has been saved in ~/.ssh/id_rsa_mister
+   ```
+
+3. **Copy the Public Key to MiSTer (default root password is '1')**
+   ```bash
+   ssh-copy-id -i ~/.ssh/id_rsa_mister.pub root@192.168.0.119
+   ```
+
+4. **Configure SSH to Use the Private Key (If Not Using Default Key)**
+   ```bash
+   nano ~/.ssh/config
+   ```
+
+   ```bash
+   Host mister
+      HostName 192.168.0.119
+      User root
+      IdentityFile ~/.ssh/id_rsa_mister
+   ```
+
+5. **Test the SSH Connection**
+   ```bash
+   ssh mister
+   ```
+
+5. **Now you can run the tool simply like this (assuming the IP of your mister does not change ;)**
+   ```bash
+   ./generate_rt4k_mister_dv1_profiles.sh --verbose -m ssh://mister
+   ```
+
+Note: This method is secure because the private key remains on your local machine and is never exposed or transferred.
 
 ## Troubleshooting
 
