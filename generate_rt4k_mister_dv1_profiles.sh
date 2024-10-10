@@ -4,7 +4,7 @@
 set -eu
 
 # Script Name: generate_rt4k_mister_dv1_profiles.sh
-# Description: Replicate profiles to MiSTer profiles/DV1/ on Retrotink 4K
+# Description: Replicate profiles to MiSTer profiles/DV1/ on RetroTINK 4K
 # Usage: ./generate_rt4k_mister_dv1_profiles.sh [options]
 # Options:
 #   -h, --help          Show help message and exit
@@ -188,10 +188,23 @@ process_cores() {
   while IFS= read -r filename; do
     # Skip if no files found
     [[ -z "$filename" ]] && continue
+
     # Extract the core name before the first delimiter
-    core_name=${filename%%"$delimiter"*}
+    if [ -n "$delimiter" ]; then
+      core_name=${filename%%"$delimiter"*}
+    else
+      core_name=${filename%.*}  # Remove file extension
+    fi
+
+    # Skip if core_name is empty
+    if [[ -z "$core_name" ]]; then
+      log "Warning: core_name is empty for filename: $filename"
+      continue
+    fi
+
     # Destination profile path
     dest_profile="${RT4K}profile/DV1/${core_name}.rt4"
+
     # Check if the profile already exists
     if [ ! -f "$dest_profile" ]; then
       log "Creating profile for ${core_name}"
