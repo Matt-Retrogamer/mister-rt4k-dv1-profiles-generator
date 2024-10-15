@@ -13,6 +13,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **SSH Remote Retrieval**: Optionally retrieves core names from a remote MiSTer device via SSH, eliminating the need to remove the SD card.
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
+- **Per-Core Profile Overrides**: Supports custom per-core profiles through an override script (`profiles_config.sh`).
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
 - **Force Overwrite**: Option to forcefully recreate and overwrite existing profiles with the `--force` flag.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
@@ -32,6 +33,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - [Configuration](#configuration)
   - [Environment Variables](#environment-variables)
   - [Base Profiles](#base-profiles)
+  - [Per-Core Profile Overrides](#per-core-profile-overrides)
 - [Additional Arcade Profiles](#additional-arcade-profiles)
 - [Output](#output)
 - [Logging and Verbose Mode](#logging-and-verbose-mode)
@@ -108,19 +110,19 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
    ./generate_rt4k_mister_dv1_profiles.sh --verbose
    ```
 
-4. **Specify Remote MiSTer via SSH (using defaults):**:
+4. **Specify Remote MiSTer via SSH (using defaults)**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --rt4k /media/rt4k/ --mister ssh://192.168.1.100
    ```
-	- SSH user defaults to root.
-	- MiSTer path defaults to /media/fat/.
+   - SSH user defaults to root.
+   - MiSTer path defaults to /media/fat/.
 
-5. **Specify SSH User and Host:**:
+5. **Specify SSH User and Host**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --rt4k /media/rt4k/ --mister ssh://user@hostname
    ```
 
-6. **Specify SSH User, Host, and Custom MiSTer Path:**:
+6. **Specify SSH User, Host, and Custom MiSTer Path**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --rt4k /media/rt4k/ --mister ssh://user@hostname:/custom/path --verbose
    ```
@@ -167,6 +169,24 @@ Ensure that the base profile files exist at the specified locations on your Retr
    ${RT4K}profile/Nintendo Switch/Billgonzo's GBC-GBA Profiles/Switch_GBC_15x.rt4
    ```
 
+### Per-Core Profile Overrides
+
+The script allows you to define custom profiles for specific MiSTer cores by using the `profiles_config.sh` file. This file should be in the same directory as the main script and contains variable definitions for core-specific profiles.
+
+To create per-core profile overrides, simply edit `profiles_config.sh` and add entries like the examples below:
+
+```bash
+# profiles_config.sh
+
+# Define per-core profiles override
+PRF_NES="${RT4K}profile/Consoles/NES_Specific_Profile.rt4"
+PRF_SNES="${RT4K}profile/Consoles/SNES_Specific_Profile.rt4"
+PRF_GENESIS="${RT4K}profile/Consoles/Genesis_Specific_Profile.rt4"
+# Add more per-core profiles as needed
+```
+
+These definitions allow the script to use custom profiles for specific cores instead of the default base profile.
+
 ## Additional Arcade Profiles
 
 If you have additional arcade profiles to generate, create a text file named `DV1_ARCADE.txt` in the same directory as the script. List the names of the arcade ROMs (without paths) you wish to generate profiles for, one per line.
@@ -192,8 +212,8 @@ The script will generate `.rt4` profile files in the following directory:
 
 ## SSH Key-Based Authentication Setup on MiSTer
 
-Below is a step-by-step guide on setting up SSH key-based authentication between your local machine and your MiSTer device. 
-This will allow you to SSH into your MiSTer without typing a password each time. 
+Below is a step-by-step guide on setting up SSH key-based authentication between your local machine and your MiSTer device.
+This will allow you to SSH into your MiSTer without typing a password each time.
 
 ### Setting Up SSH Key-Based Authentication on MiSTer
 For better security, it’s recommended to generate the SSH key pair on your local machine and copy the public key to the MiSTer device.
@@ -217,8 +237,8 @@ If you are familiar with ssh, please also define a pathphrase to be more secure.
    ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
    Generating public/private rsa key pair.
    Enter file in which to save the key (~/.ssh/id_rsa): ~/.ssh/id_rsa_mister
-   Enter passphrase (empty for no passphrase): 
-   Enter same passphrase again: 
+   Enter passphrase (empty for no passphrase):
+   Enter same passphrase again:
    Your identification has been saved in ~/.ssh/id_rsa_mister
    Your public key has been saved in ~/.ssh/id_rsa_mister
    ```
@@ -311,3 +331,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 ## Contact
 
 For questions, suggestions, or support, please open an issue on the GitHub repository.
+
