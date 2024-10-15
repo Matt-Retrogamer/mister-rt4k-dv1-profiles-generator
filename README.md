@@ -14,6 +14,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
 - **Per-Core Profile Overrides**: Supports custom per-core profiles through an override script (`profiles_config.sh`).
+- **Profile Input Override**: Input is automatically set to "HDMI" for the DV1 profiles (Work in Progress).
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
 - **Force Overwrite**: Option to forcefully recreate and overwrite existing profiles with the `--force` flag.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
