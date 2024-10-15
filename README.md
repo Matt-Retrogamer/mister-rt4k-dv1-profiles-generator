@@ -14,7 +14,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
 - **Per-Core Profile Overrides**: Supports custom per-core profiles through an override script (`profiles_config.sh`).
-- **Automatic Profile Input Override**: Input is automatically set to "HDMI" for the DV1 profiles (Work in Progress).
+- **Profile HDMI Input Override (placeholder)Profile Input Override**: Input is automatically set to "HDMI" for the DV1 profiles (Work in Progress).
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
 - **Force Overwrite**: Option to forcefully recreate and overwrite existing profiles with the `--force` flag.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
@@ -180,9 +180,9 @@ To create per-core profile overrides, simply edit `profiles_config.sh` and add e
 # profiles_config.sh
 
 # Define per-core profiles override
-PRF_NES="${RT4K}profile/Consoles/NES_Specific_Profile.rt4"
-PRF_SNES="${RT4K}profile/Consoles/SNES_Specific_Profile.rt4"
-PRF_GENESIS="${RT4K}profile/Consoles/Genesis_Specific_Profile.rt4"
+PRF_NES="${RT4K}profile/Nintendo NES + FC/FirebrandX HDRV-Low NTSC/NES DAR 09x.rt4"
+PRF_SNES="${RT4K}profile/Nintendo SNES + SFC/Wobbling Pixels NTSC & PAL RGBL - Sharp/SNES & SFC DAR - Sharp.rt4"
+PRF_GENESIS="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
 # Add more per-core profiles as needed
 ```
 
@@ -318,6 +318,7 @@ Contributions are welcome! Please open an issue or submit a pull request if you 
 - [x] Feature: add SSH remote retrieval of the core names on the MiSTer (allows execution without removing the SD card from the MiSTer)
 - [x] Feature: Add DV1 Arcade profiles management. Read MiSTer MRA file and create DV1 Arcade list based on `<setname>` (e.g., `sfa2.zip` > `sfa2.rt4`)
 - [x] Feature: Add override profiles option
+- [ ] Feature: Add automatic DV1 profile input set to HDMI
 
 ## License
 
@@ -332,4 +333,3 @@ This project is licensed under the MIT License. See the LICENSE file for details
 ## Contact
 
 For questions, suggestions, or support, please open an issue on the GitHub repository.
-
