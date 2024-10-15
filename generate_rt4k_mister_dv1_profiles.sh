@@ -194,6 +194,13 @@ sanitize_var_name() {
   echo "$sanitized"
 }
 
+# Placeholder function to set HDMI input in the profile
+set_hdmi_input() {
+  local profile_path="$1"
+  # Placeholder for future implementation
+  log "Setting HDMI input for profile: $profile_path (placeholder)"
+}
+
 # Function to process cores
 process_cores() {
   local core_type="$1"
@@ -252,6 +259,7 @@ process_cores() {
       if [ "$FORCE" -eq 1 ]; then
         log "Overwriting existing profile for ${core_name}"
         if cp "$base_profile_to_use" "$dest_profile"; then
+          set_hdmi_input "$dest_profile"
           overwritten_profiles=$((overwritten_profiles + 1))
         else
           echo "Error: Failed to overwrite profile for ${core_name}"
@@ -264,6 +272,7 @@ process_cores() {
     else
       log "Creating profile for ${core_name}"
       if cp "$base_profile_to_use" "$dest_profile"; then
+        set_hdmi_input "$dest_profile"
         created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to create profile for ${core_name}"
@@ -313,6 +322,7 @@ process_additional_arcade_profiles() {
       if [ "$FORCE" -eq 1 ]; then
         log "Overwriting existing profile for ${filename}"
         if cp "$base_profile_to_use" "$dest_profile"; then
+          set_hdmi_input "$dest_profile"
           overwritten_profiles=$((overwritten_profiles + 1))
         else
           echo "Error: Failed to overwrite profile for ${filename}"
@@ -325,6 +335,7 @@ process_additional_arcade_profiles() {
     else
       log "Creating additional arcade profile for ${filename}"
       if cp "$base_profile_to_use" "$dest_profile"; then
+        set_hdmi_input "$dest_profile"
         created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to create profile for ${filename}"
@@ -362,6 +373,7 @@ additional_handling() {
     if [ "$FORCE" -eq 1 ]; then
       log "Overwriting Menu.rt4 profile"
       if cp "$PRF_ARCADE" "$dest_profile"; then
+        set_hdmi_input "$dest_profile"
         overwritten_profiles=$((overwritten_profiles + 1))
       else
         echo "Error: Failed to overwrite Menu.rt4 profile"
@@ -374,6 +386,7 @@ additional_handling() {
   else
     log "Creating Menu.rt4 profile"
     if cp "$PRF_ARCADE" "$dest_profile"; then
+      set_hdmi_input "$dest_profile"
       created_profiles=$((created_profiles + 1))
     else
       echo "Error: Failed to create Menu.rt4 profile"
