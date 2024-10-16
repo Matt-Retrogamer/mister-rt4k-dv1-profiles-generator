@@ -11,7 +11,7 @@ PRF_GBC="${RT4K}profile/Nintendo Switch/Billgonzo's GBC-GBA Profiles/Switch_GBC_
 # Define per-core profiles override
 #PRF_NES="${RT4K}profile/Nintendo NES + FC/FirebrandX HDRV-Low NTSC/NES DAR 09x.rt4"
 #PRF_SNES="${RT4K}profile/Nintendo SNES + SFC/Wobbling Pixels NTSC & PAL RGBL - Sharp/SNES & SFC DAR - Sharp.rt4"
-#PRF_GENESIS="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
+#PRF_MEGA_DRIVE="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
 
 # Add more per-core profiles as needed
 
