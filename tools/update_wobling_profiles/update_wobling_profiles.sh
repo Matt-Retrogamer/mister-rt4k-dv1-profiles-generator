@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Usage: ./update_wobling_profiles.sh /path/to/SD_Card /path/to/update.zip
 
