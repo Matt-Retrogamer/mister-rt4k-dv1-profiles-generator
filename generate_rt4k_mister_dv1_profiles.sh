@@ -198,7 +198,7 @@ sanitize_var_name() {
 set_hdmi_input() {
   local profile_path="$1"
   # Placeholder for future implementation
-  log "Setting HDMI input for profile: $profile_path (placeholder)"
+  # log "Setting HDMI input for profile: $profile_path (placeholder)"
 }
 
 # Function to process cores
