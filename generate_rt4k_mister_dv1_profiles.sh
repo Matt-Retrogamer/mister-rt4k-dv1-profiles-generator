@@ -86,7 +86,7 @@ if [[ "$MISTER" == ssh://* ]]; then
   # Default values
   SSH_USER="root"
   MISTER_PATH="/media/fat/"
-  
+
   # Extract SSH_USER and MISTER_SSH_REST
   if [[ "$MISTER_SSH_URL" == *@* ]]; then
     SSH_USER="${MISTER_SSH_URL%%@*}"
@@ -94,7 +94,7 @@ if [[ "$MISTER" == ssh://* ]]; then
   else
     MISTER_SSH_REST="$MISTER_SSH_URL"
   fi
-  
+
   # Extract SSH_HOST and MISTER_PATH
   if [[ "$MISTER_SSH_REST" == *:* ]]; then
     SSH_HOST="${MISTER_SSH_REST%%:*}"
@@ -138,14 +138,21 @@ else
   fi
 fi
 
-# Set Base Profiles (Console, Arcade, Portables)
-PRF_CONSOLE="${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4"
-PRF_GBA="${RT4K}profile/Nintendo Switch/Billgonzo's GBC-GBA Profiles/Switch_GBA_13x.rt4"
-PRF_GBC="${RT4K}profile/Nintendo Switch/Billgonzo's GBC-GBA Profiles/Switch_GBC_15x.rt4"
-PRF_ARCADE="${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4"
+# Source per-core profiles and base profiles from config file if it exists
+PROFILES_CONFIG_FILE="profiles_config.sh"
+if [ -f "$PROFILES_CONFIG_FILE" ]; then
+  log "Sourcing profiles from $PROFILES_CONFIG_FILE"
+  source "$PROFILES_CONFIG_FILE"
+else
+  log "Config file $PROFILES_CONFIG_FILE not found. Using default profiles."
+fi
+
+# Set Base Profiles (Console, Arcade) - Fallback to defaults if not set in override
+PRF_CONSOLE="${PRF_CONSOLE:-${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4}"
+PRF_ARCADE="${PRF_ARCADE:-${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4}"
 
 # Check if base profile files exist
-for profile in "$PRF_CONSOLE" "$PRF_GBA" "$PRF_GBC" "$PRF_ARCADE"; do
+for profile in "$PRF_CONSOLE" "$PRF_ARCADE"; do
   if [ ! -f "$profile" ]; then
     echo "Error: Base profile file not found: $profile"
     exit 1
@@ -179,11 +186,26 @@ directory_exists() {
   fi
 }
 
+# Function to sanitize core_name to a valid variable name
+sanitize_var_name() {
+  local input="$1"
+  # Convert to uppercase, replace spaces with underscores, remove invalid characters
+  local sanitized=$(echo "$input" | tr '[:lower:]' '[:upper:]' | tr ' ' '_' | tr -cd '[:alnum:]_')
+  echo "$sanitized"
+}
+
+# Placeholder function to set HDMI input in the profile
+set_hdmi_input() {
+  local profile_path="$1"
+  # Placeholder for future implementation
+  # log "Setting HDMI input for profile: $profile_path (placeholder)"
+}
+
 # Function to process cores
 process_cores() {
   local core_type="$1"
   local source_dir="$2"
-  local base_profile="$3"
+  local default_base_profile="$3"
   local file_ext="$4"
   local delimiter="$5"
 
@@ -210,6 +232,25 @@ process_cores() {
       continue
     fi
 
+    # Sanitize core_name
+    sanitized_core_name=$(sanitize_var_name "$core_name")
+    # Construct variable name
+    var_name="PRF_${sanitized_core_name}"
+
+    # Determine the base profile to use
+    if [ -n "${!var_name:-}" ]; then
+      base_profile_to_use="${!var_name}"
+    else
+      base_profile_to_use="$default_base_profile"
+    fi
+
+    # Check if the base profile file exists
+    if [ ! -f "$base_profile_to_use" ]; then
+      echo "Error: Base profile file not found: $base_profile_to_use for core $core_name"
+      errors=$((errors + 1))
+      continue
+    fi
+
     # Destination profile path
     dest_profile="${RT4K}profile/DV1/${core_name}.rt4"
 
@@ -217,7 +258,8 @@ process_cores() {
     if [ -f "$dest_profile" ]; then
       if [ "$FORCE" -eq 1 ]; then
         log "Overwriting existing profile for ${core_name}"
-        if cp "$base_profile" "$dest_profile"; then
+        if cp "$base_profile_to_use" "$dest_profile"; then
+          set_hdmi_input "$dest_profile"
           overwritten_profiles=$((overwritten_profiles + 1))
         else
           echo "Error: Failed to overwrite profile for ${core_name}"
@@ -229,7 +271,8 @@ process_cores() {
       fi
     else
       log "Creating profile for ${core_name}"
-      if cp "$base_profile" "$dest_profile"; then
+      if cp "$base_profile_to_use" "$dest_profile"; then
+        set_hdmi_input "$dest_profile"
         created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to create profile for ${core_name}"
@@ -253,12 +296,33 @@ process_additional_arcade_profiles() {
     # Skip empty lines or comments
     [[ -z "$line" || "$line" == \#* ]] && continue
     filename=$(basename "$line" .zip)
+
+    # Sanitize core_name
+    sanitized_core_name=$(sanitize_var_name "$filename")
+    # Construct variable name
+    var_name="PRF_${sanitized_core_name}"
+
+    # Determine the base profile to use
+    if [ -n "${!var_name:-}" ]; then
+      base_profile_to_use="${!var_name}"
+    else
+      base_profile_to_use="$PRF_ARCADE"
+    fi
+
+    # Check if the base profile file exists
+    if [ ! -f "$base_profile_to_use" ]; then
+      echo "Error: Base profile file not found: $base_profile_to_use for core $filename"
+      errors=$((errors + 1))
+      continue
+    fi
+
     dest_profile="${RT4K}profile/DV1/${filename}.rt4"
     # Check if the profile exists
     if [ -f "$dest_profile" ]; then
       if [ "$FORCE" -eq 1 ]; then
         log "Overwriting existing profile for ${filename}"
-        if cp "$PRF_ARCADE" "$dest_profile"; then
+        if cp "$base_profile_to_use" "$dest_profile"; then
+          set_hdmi_input "$dest_profile"
           overwritten_profiles=$((overwritten_profiles + 1))
         else
           echo "Error: Failed to overwrite profile for ${filename}"
@@ -270,7 +334,8 @@ process_additional_arcade_profiles() {
       fi
     else
       log "Creating additional arcade profile for ${filename}"
-      if cp "$PRF_ARCADE" "$dest_profile"; then
+      if cp "$base_profile_to_use" "$dest_profile"; then
+        set_hdmi_input "$dest_profile"
         created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to create profile for ${filename}"
@@ -308,6 +373,7 @@ additional_handling() {
     if [ "$FORCE" -eq 1 ]; then
       log "Overwriting Menu.rt4 profile"
       if cp "$PRF_ARCADE" "$dest_profile"; then
+        set_hdmi_input "$dest_profile"
         overwritten_profiles=$((overwritten_profiles + 1))
       else
         echo "Error: Failed to overwrite Menu.rt4 profile"
@@ -320,61 +386,10 @@ additional_handling() {
   else
     log "Creating Menu.rt4 profile"
     if cp "$PRF_ARCADE" "$dest_profile"; then
+      set_hdmi_input "$dest_profile"
       created_profiles=$((created_profiles + 1))
     else
       echo "Error: Failed to create Menu.rt4 profile"
-      errors=$((errors + 1))
-    fi
-  fi
-
-  # Portables/Specific profiles
-
-  # Handle GBA
-  dest_profile="${RT4K}profile/DV1/GBA.rt4"
-  if [ -f "$dest_profile" ]; then
-    if [ "$FORCE" -eq 1 ]; then
-      log "Overwriting GBA.rt4 profile"
-      if cp "$PRF_GBA" "$dest_profile"; then
-        overwritten_profiles=$((overwritten_profiles + 1))
-      else
-        echo "Error: Failed to overwrite GBA.rt4 profile"
-        errors=$((errors + 1))
-      fi
-    else
-      log "GBA.rt4 already exists. Skipping."
-      skipped_profiles=$((skipped_profiles + 1))
-    fi
-  else
-    log "Creating GBA.rt4 profile"
-    if cp "$PRF_GBA" "$dest_profile"; then
-      created_profiles=$((created_profiles + 1))
-    else
-      echo "Error: Failed to create GBA.rt4 profile"
-      errors=$((errors + 1))
-    fi
-  fi
-
-  # Handle GBC
-  dest_profile="${RT4K}profile/DV1/GBC.rt4"
-  if [ -f "$dest_profile" ]; then
-    if [ "$FORCE" -eq 1 ]; then
-      log "Overwriting GBC.rt4 profile"
-      if cp "$PRF_GBC" "$dest_profile"; then
-        overwritten_profiles=$((overwritten_profiles + 1))
-      else
-        echo "Error: Failed to overwrite GBC.rt4 profile"
-        errors=$((errors + 1))
-      fi
-    else
-      log "GBC.rt4 already exists. Skipping."
-      skipped_profiles=$((skipped_profiles + 1))
-    fi
-  else
-    log "Creating GBC.rt4 profile"
-    if cp "$PRF_GBC" "$dest_profile"; then
-      created_profiles=$((created_profiles + 1))
-    else
-      echo "Error: Failed to create GBC.rt4 profile"
       errors=$((errors + 1))
     fi
   fi

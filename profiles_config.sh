@@ -1,0 +1,66 @@
+# profiles_config.sh
+
+# Set Base Profiles (Console, Arcade)
+PRF_CONSOLE="${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4"
+PRF_ARCADE="${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4"
+
+# Define portable profiles
+PRF_GBA="${RT4K}profile/Nintendo Switch/Billgonzo's GBC-GBA Profiles/Switch_GBA_13x.rt4"
+PRF_GBC="${RT4K}profile/Nintendo Switch/Billgonzo's GBC-GBA Profiles/Switch_GBC_15x.rt4"
+
+# Define per-core profiles override
+#PRF_NES="${RT4K}profile/Nintendo NES + FC/FirebrandX HDRV-Low NTSC/NES DAR 09x.rt4"
+#PRF_SNES="${RT4K}profile/Nintendo SNES + SFC/Wobbling Pixels NTSC & PAL RGBL - Sharp/SNES & SFC DAR - Sharp.rt4"
+#PRF_GENESIS="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
+
+# Add more per-core profiles as needed
+
+# All available cores (commented out for easy customization)
+# Uncomment and set the desired profile for each core
+#PRF_AY_3_8500=""
+#PRF_ADVENTUREVISION=""
+#PRF_ARCADIA=""
+#PRF_ASTROCADE=""
+#PRF_ATARI_2600=""
+#PRF_ATARI5200=""
+#PRF_ATARI7800=""
+#PRF_ATARILYNX=""
+#PRF_BBCBRIDGECOMPANION=""
+#PRF_CASIO_PV_1000=""
+#PRF_CHANNELF=""
+#PRF_COLECOVISION=""
+#PRF_CREATIVISION=""
+#PRF_GBA2P=""
+#PRF_GAMATE=""
+#PRF_GAME_GEAR=""
+#PRF_GAMEANDWATCH=""
+#PRF_GAMEBOY2P=""
+#PRF_GAMEBOYCOLOR=""
+#PRF_GAMEBOY=""
+#PRF_GENESIS=""
+#PRF_GNW=""
+#PRF_INTELLIVISION=""
+#PRF_JAGUAR=""
+#PRF_MEGA_DUCK=""
+#PRF_MEGA_CD=""
+#PRF_MEGA_DRIVE=""
+#PRF_MYVISION=""
+#PRF_N64=""
+#PRF_NEO_GEO_POCKET=""
+#PRF_NEO_GEO=""
+#PRF_ODYSSEY2=""
+#PRF_PSX=""
+#PRF_POCKET_CHALLENGE_V2=""
+#PRF_POKEMONMINI=""
+#PRF_S32X=""
+#PRF_SGB=""
+#PRF_SMS=""
+#PRF_SNES=""
+#PRF_SATURN=""
+#PRF_SUPERVISION=""
+#PRF_SUPER_VISION_8000=""
+#PRF_TURBOGRAFX16=""
+#PRF_VC4000=""
+#PRF_VECTREX=""
+#PRF_WONDERSWAN_COLOR=""
+#PRF_WONDERSWAN=""
