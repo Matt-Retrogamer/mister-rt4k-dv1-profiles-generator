@@ -13,8 +13,8 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **SSH Remote Retrieval**: Optionally retrieves core names from a remote MiSTer device via SSH, eliminating the need to remove the SD card.
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
-- **Per-Core Profile Overrides**: Supports custom per-core profiles through an override script (`profiles_config.sh`).
-- **Profile HDMI Input Override (placeholder)Profile Input Override**: Input is automatically set to "HDMI" for the DV1 profiles (Work in Progress).
+- **Per-Core Profile Overrides**: Supports custom per-core profiles through an override script (`profiles_config.sh`). The script includes predefined entries for all available MiSTer cores, making it easy to customize profiles by uncommenting the respective lines.
+- **Profile HDMI Input Override (Placeholder)**: A placeholder feature is included for setting the HDMI input for all DV1 profiles. This is currently not implemented and will be updated in future versions.
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
 - **Force Overwrite**: Option to forcefully recreate and overwrite existing profiles with the `--force` flag.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
@@ -35,6 +35,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
   - [Environment Variables](#environment-variables)
   - [Base Profiles](#base-profiles)
   - [Per-Core Profile Overrides](#per-core-profile-overrides)
+    - [Predefined Core Profiles](#predefined-core-profiles)
 - [Additional Arcade Profiles](#additional-arcade-profiles)
 - [Output](#output)
 - [Logging and Verbose Mode](#logging-and-verbose-mode)
@@ -172,9 +173,7 @@ Ensure that the base profile files exist at the specified locations on your Retr
 
 ### Per-Core Profile Overrides
 
-The script allows you to define custom profiles for specific MiSTer cores by using the `profiles_config.sh` file. This file should be in the same directory as the main script and contains variable definitions for core-specific profiles.
-
-To create per-core profile overrides, simply edit `profiles_config.sh` and add entries like the examples below:
+To create per-core profile overrides, edit `profiles_config.sh` and add or uncomment entries like the examples below:
 
 ```bash
 # profiles_config.sh
@@ -183,10 +182,22 @@ To create per-core profile overrides, simply edit `profiles_config.sh` and add e
 PRF_NES="${RT4K}profile/Nintendo NES + FC/FirebrandX HDRV-Low NTSC/NES DAR 09x.rt4"
 PRF_SNES="${RT4K}profile/Nintendo SNES + SFC/Wobbling Pixels NTSC & PAL RGBL - Sharp/SNES & SFC DAR - Sharp.rt4"
 PRF_GENESIS="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
-# Add more per-core profiles as needed
+
+# Predefined cores (initially commented out for easy customization)
+# Uncomment and specify the desired profile
+# PRF_ATARI_2600="${RT4K}path/to/atari_2600_profile.rt4"
 ```
 
-These definitions allow the script to use custom profiles for specific cores instead of the default base profile.
+### Predefined Core Profiles
+
+The `profiles_config.sh` file now includes predefined entries for each MiSTer core. These entries are initially commented out, allowing you to easily customize profiles for each core by simply uncommenting the lines and specifying the desired `.rt4` profile path.
+
+Example of customization:
+```bash
+# Uncomment and specify the profile to use for the NES core
+PRF_NES="${RT4K}profile/Nintendo NES + FC/FirebrandX HDRV-Low NTSC/NES DAR 09x.rt4"
+```
+This makes it easy to add or change the profile for any available core without needing to add the core name manually.
 
 ## Additional Arcade Profiles
 
