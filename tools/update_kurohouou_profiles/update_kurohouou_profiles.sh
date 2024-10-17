@@ -26,6 +26,7 @@ unzip -o "$ZIP_FILE" "image/*" -d "$SD_CARD_PATH"
 echo "Copying 'profile' folder contents from the zip file to '$SD_CARD_PATH/profile/_CRT Emulation'..."
 TEMP_DIR=$(mktemp -d)
 unzip -o "$ZIP_FILE" "profile/*" -d "$TEMP_DIR"
+find "$TEMP_DIR" -exec chmod u+w "{}" \;
 mkdir -p "$SD_CARD_PATH/profile/_CRT Emulation"
 mv "$TEMP_DIR/profile/"* "$SD_CARD_PATH/profile/_CRT Emulation/"
 rm -rf "$TEMP_DIR"
