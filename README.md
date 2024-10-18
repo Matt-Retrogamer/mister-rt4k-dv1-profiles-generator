@@ -14,7 +14,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
 - **Per-Core Profile Overrides**: Supports custom per-core profiles through an override script (`profiles_config.sh`). The script includes predefined entries for all available MiSTer cores, making it easy to customize profiles by uncommenting the respective lines.
-- **Profile HDMI Input Override (Placeholder)**: A placeholder feature is included for setting the HDMI input for all DV1 profiles. This is currently not implemented and will be updated in future versions.
+- **Profile HDMI Input Override**: Allows setting the HDMI input for all DV1 profiles to ensure compatibility with the RetroTINK 4K. This feature can be enabled with the `--set-hdmi-input` option.
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
 - **Force Overwrite**: Option to forcefully recreate and overwrite existing profiles with the `--force` flag.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
@@ -94,6 +94,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - `-r`, `--rt4k PATH` : Set RetroTINK 4K SD card root path.
 - `-m`, `--mister PATH` : Set MiSTer root path (local path or SSH URL).
 - `-f`, `--force` : Force overwrite of existing profiles.
+- `-i`, `--set-hdmi-input` : Enable HDMI input override in profiles.
 
 ## Examples
 
@@ -134,7 +135,12 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
    ./generate_rt4k_mister_dv1_profiles.sh --force
    ```
 
-8. **Display Help Message**:
+8. **Set HDMI Input for All Profiles**:
+   ```bash
+   ./generate_rt4k_mister_dv1_profiles.sh --set-hdmi-input
+   ```
+
+9. **Display Help Message**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --help
    ```
@@ -181,7 +187,7 @@ To create per-core profile overrides, edit `profiles_config.sh` and add or uncom
 # Define per-core profiles override
 PRF_NES="${RT4K}profile/Nintendo NES + FC/FirebrandX HDRV-Low NTSC/NES DAR 09x.rt4"
 PRF_SNES="${RT4K}profile/Nintendo SNES + SFC/Wobbling Pixels NTSC & PAL RGBL - Sharp/SNES & SFC DAR - Sharp.rt4"
-PRF_GENESIS="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
+PRF_MEGADRIVE="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
 
 # Predefined cores (initially commented out for easy customization)
 # Uncomment and specify the desired profile
@@ -221,6 +227,18 @@ The script will generate `.rt4` profile files in the following directory:
 
 - **Verbose Mode**: Use the `--verbose` or `-v` option to enable detailed output of the script’s actions.
 - **Error Messages**: Any errors encountered will be displayed in the console, regardless of the verbosity setting.
+
+## HDMI Input Override
+
+The **HDMI Input Override** feature is used to set the HDMI input in the generated `.rt4` profiles, ensuring compatibility with the RetroTINK 4K device. You can enable this feature by using the `--set-hdmi-input` or `-i` option when running the script. When enabled, the script will modify each profile to specify HDMI as the input source.
+
+This is particularly useful if your RetroTINK 4K setup requires all profiles to default to HDMI input for seamless operation with the MiSTer FPGA.
+
+Example:
+
+```bash
+./generate_rt4k_mister_dv1_profiles.sh --set-hdmi-input
+```
 
 ## SSH Key-Based Authentication Setup on MiSTer
 
@@ -329,7 +347,7 @@ Contributions are welcome! Please open an issue or submit a pull request if you 
 - [x] Feature: add SSH remote retrieval of the core names on the MiSTer (allows execution without removing the SD card from the MiSTer)
 - [x] Feature: Add DV1 Arcade profiles management. Read MiSTer MRA file and create DV1 Arcade list based on `<setname>` (e.g., `sfa2.zip` > `sfa2.rt4`)
 - [x] Feature: Add override profiles option
-- [ ] Feature: Add automatic DV1 profile input set to HDMI
+- [x] Feature: Add automatic DV1 profile input set to HDMI
 
 ## License
 
