@@ -7,31 +7,34 @@ set -eu
 # Description: Replicate profiles to MiSTer profiles/DV1/ on RetroTINK 4K
 # Usage: ./generate_rt4k_mister_dv1_profiles.sh [options]
 # Options:
-#   -h, --help          Show help message and exit
-#   -v, --verbose       Enable verbose output
-#   -f, --force         Force overwrite of existing profiles
-#   -r, --rt4k PATH     Set RT4K SD Card root path
-#   -m, --mister PATH   Set MiSTer root path (local path or SSH URL)
+#   -h, --help              Show help message and exit
+#   -v, --verbose           Enable verbose output
+#   -f, --force             Force overwrite of existing profiles
+#   -r, --rt4k PATH         Set RT4K SD Card root path
+#   -m, --mister PATH       Set MiSTer root path (local path or SSH URL)
+#   -i, --set-hdmi-input    Enable HDMI input override in profiles
 
 # Default paths (can be overridden by command-line arguments or environment variables)
 RT4K="${RT4K:-data/rt4k/}"
 MISTER="${MISTER:-data/mister/}"
 VERBOSE=0
 FORCE=0
+SET_HDMI_INPUT=0  # New variable to control HDMI input override
 
 # Function to show help message
 show_help() {
   echo "Usage: $0 [options]"
   echo "Options:"
-  echo "  -h, --help          Show help message and exit"
-  echo "  -v, --verbose       Enable verbose output"
-  echo "  -f, --force         Force overwrite of existing profiles"
-  echo "  -r, --rt4k PATH     Set RT4K SD Card root path"
-  echo "  -m, --mister PATH   Set MiSTer root path (local path or SSH URL)"
+  echo "  -h, --help              Show help message and exit"
+  echo "  -v, --verbose           Enable verbose output"
+  echo "  -f, --force             Force overwrite of existing profiles"
+  echo "  -r, --rt4k PATH         Set RT4K SD Card root path"
+  echo "  -m, --mister PATH       Set MiSTer root path (local path or SSH URL)"
+  echo "  -i, --set-hdmi-input    Enable HDMI input override in profiles"
   echo "Examples:"
-  echo "  $0 --rt4k /media/rt4k/ --mister /media/fat/ --verbose"
-  echo "  $0 --rt4k /media/rt4k/ --mister ssh://192.168.1.100 --verbose"
-  echo "  $0 --rt4k /media/rt4k/ --mister ssh://user@hostname --force --verbose"
+  echo "  $0 --rt4k /media/rt4k/ --mister /media/fat/ --verbose --set-hdmi-input"
+  echo "  $0 --rt4k /media/rt4k/ --mister ssh://192.168.1.100 --verbose --set-hdmi-input"
+  echo "  $0 --rt4k /media/rt4k/ --mister ssh://user@hostname --force --verbose --set-hdmi-input"
 }
 
 # Parse command-line arguments
@@ -51,6 +54,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -f|--force)
       FORCE=1
+      shift
+      ;;
+    -i|--set-hdmi-input)
+      SET_HDMI_INPUT=1
       shift
       ;;
     -h|--help)
@@ -194,11 +201,78 @@ sanitize_var_name() {
   echo "$sanitized"
 }
 
-# Placeholder function to set HDMI input in the profile
+# Function to set HDMI input in the profile and recalculate CRC
 set_hdmi_input() {
   local profile_path="$1"
-  # Placeholder for future implementation
-  # log "Setting HDMI input for profile: $profile_path (placeholder)"
+
+  # Check if Python 3 and the Python script are available
+  if command -v python3 >/dev/null 2>&1 && [ -f "tools/set_hdmi_input_python/set_hdmi_input.py" ]; then
+    # Call the Python script
+    log "Setting input to HDMI for profile: $profile_path (python3 implementation - Fast)"
+    python3 tools/set_hdmi_input_python/set_hdmi_input.py "$profile_path"
+  else
+    log "Setting input to HDMI for profile: $profile_path (Bash implementation - Slow)"
+
+    # Offsets and values based on the RT4K profile structure
+    local header_size=128                # Header size in bytes
+    local input_source_offset=22505      # Offset in data section (excluding header)
+    local total_input_offset=$((header_size + input_source_offset))  # Total offset in file
+
+    local input_source_hdmi_value=0      # Value representing HDMI input (from definitions)
+
+    # Write the HDMI input value at the specified offset
+    printf "%02x" "$input_source_hdmi_value" | xxd -r -p | dd of="$profile_path" bs=1 seek="$total_input_offset" count=1 conv=notrunc status=none
+
+    # Read the data starting from offset 128 to the end of the file
+    local crc_data_hex
+    crc_data_hex=$(dd if="$profile_path" bs=1 skip=128 status=none | xxd -p -c 256 | tr -d '\n')
+
+    # Calculate the CRC16 using the provided algorithm
+    local crc
+    crc=$(crc16 "$crc_data_hex")
+
+    # Prepare the CRC bytes in little-endian order
+    local crc_low
+    local crc_high
+    crc_low=$(printf "%02x" $((crc & 0xFF)))
+    crc_high=$(printf "%02x" $(((crc >> 8) & 0xFF)))
+
+    # Combine CRC bytes and two zero bytes
+    printf "%s%s0000" "$crc_low" "$crc_high" | xxd -r -p | dd of="$profile_path" bs=1 seek=32 count=4 conv=notrunc status=none
+  fi
+}
+
+# CRC16 calculation function in Bash (as per provided C code)
+crc16() {
+  local data_hex="$1"
+  local crc=0
+  local data_len=${#data_hex}
+  local index t_dat crc_index
+
+  # CRC table as per the provided C code
+  local crc_table=(
+    0x0000 0x1021 0x2042 0x3063
+    0x4084 0x50a5 0x60c6 0x70e7
+    0x8108 0x9129 0xa14a 0xb16b
+    0xc18c 0xd1ad 0xe1ce 0xf1ef
+  )
+
+  # Process each byte (represented as two hex characters)
+  for (( index=0; index<data_len; index+=2 )); do
+    # Get the current byte value
+    t_dat=$(( 0x${data_hex:$index:2} ))
+
+    # First iteration
+    crc_index=$(( (crc >> 12) ^ (t_dat >> 4) ))
+    crc=$(( ${crc_table[crc_index & 0x0F]} ^ ( (crc << 4) & 0xFFFF ) ))
+
+    # Second iteration
+    crc_index=$(( (crc >> 12) ^ (t_dat & 0x0F) ))
+    crc=$(( ${crc_table[crc_index & 0x0F]} ^ ( (crc << 4) & 0xFFFF ) ))
+  done
+
+  # Return the lower 16 bits of crc
+  echo $(( crc & 0xFFFF ))
 }
 
 # Function to process cores
@@ -259,7 +333,9 @@ process_cores() {
       if [ "$FORCE" -eq 1 ]; then
         log "Overwriting existing profile for ${core_name}"
         if cp "$base_profile_to_use" "$dest_profile"; then
-          set_hdmi_input "$dest_profile"
+          if [ "$SET_HDMI_INPUT" -eq 1 ]; then
+            set_hdmi_input "$dest_profile"
+          fi
           overwritten_profiles=$((overwritten_profiles + 1))
         else
           echo "Error: Failed to overwrite profile for ${core_name}"
@@ -272,7 +348,9 @@ process_cores() {
     else
       log "Creating profile for ${core_name}"
       if cp "$base_profile_to_use" "$dest_profile"; then
-        set_hdmi_input "$dest_profile"
+        if [ "$SET_HDMI_INPUT" -eq 1 ]; then
+          set_hdmi_input "$dest_profile"
+        fi
         created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to create profile for ${core_name}"
@@ -322,7 +400,9 @@ process_additional_arcade_profiles() {
       if [ "$FORCE" -eq 1 ]; then
         log "Overwriting existing profile for ${filename}"
         if cp "$base_profile_to_use" "$dest_profile"; then
-          set_hdmi_input "$dest_profile"
+          if [ "$SET_HDMI_INPUT" -eq 1 ]; then
+            set_hdmi_input "$dest_profile"
+          fi
           overwritten_profiles=$((overwritten_profiles + 1))
         else
           echo "Error: Failed to overwrite profile for ${filename}"
@@ -335,7 +415,9 @@ process_additional_arcade_profiles() {
     else
       log "Creating additional arcade profile for ${filename}"
       if cp "$base_profile_to_use" "$dest_profile"; then
-        set_hdmi_input "$dest_profile"
+        if [ "$SET_HDMI_INPUT" -eq 1 ]; then
+          set_hdmi_input "$dest_profile"
+        fi
         created_profiles=$((created_profiles + 1))
       else
         echo "Error: Failed to create profile for ${filename}"
@@ -373,7 +455,9 @@ additional_handling() {
     if [ "$FORCE" -eq 1 ]; then
       log "Overwriting Menu.rt4 profile"
       if cp "$PRF_ARCADE" "$dest_profile"; then
-        set_hdmi_input "$dest_profile"
+        if [ "$SET_HDMI_INPUT" -eq 1 ]; then
+          set_hdmi_input "$dest_profile"
+        fi
         overwritten_profiles=$((overwritten_profiles + 1))
       else
         echo "Error: Failed to overwrite Menu.rt4 profile"
@@ -386,7 +470,9 @@ additional_handling() {
   else
     log "Creating Menu.rt4 profile"
     if cp "$PRF_ARCADE" "$dest_profile"; then
-      set_hdmi_input "$dest_profile"
+      if [ "$SET_HDMI_INPUT" -eq 1 ]; then
+        set_hdmi_input "$dest_profile"
+      fi
       created_profiles=$((created_profiles + 1))
     else
       echo "Error: Failed to create Menu.rt4 profile"

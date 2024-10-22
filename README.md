@@ -14,13 +14,33 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
 - **Per-Core Profile Overrides**: Supports custom per-core profiles through an override script (`profiles_config.sh`). The script includes predefined entries for all available MiSTer cores, making it easy to customize profiles by uncommenting the respective lines.
-- **Profile HDMI Input Override (Placeholder)**: A placeholder feature is included for setting the HDMI input for all DV1 profiles. This is currently not implemented and will be updated in future versions.
+- **Profile HDMI Input Override**: Allows setting the HDMI input for all DV1 profiles to ensure compatibility with the RetroTINK 4K. This feature can be enabled with the `--set-hdmi-input` option. If Python3 is installed, the HDMI input override is performed using a Python script for faster execution; otherwise, it falls back to a slower Bash implementation.
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
 - **Force Overwrite**: Option to forcefully recreate and overwrite existing profiles with the `--force` flag.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
 - **User-Friendly Options**: Command-line arguments and environment variables for easy customization.
 - **Verbose Output**: Optional verbose mode for detailed logging.
 - **Error Handling**: Checks for missing files and directories, providing meaningful error messages.
+
+## MiSTer DV1 Mode and RetroTINK-4K
+
+The RetroTINK-4K is compatible with the MiSTer's DirectVideo (aka DV1) video output mode. Compatible cores can output DV1 video over HDMI, which aims to preserve the original content's pixel-accurate video. To work within the HDMI standard, DV1 can often require resolution padding (black bars) and pixel multiplication. By including the padding and multiplication info in the HDMI transmission itself (via the HDMI SPD Infoframe), compatible devices can recreate a pixel-accurate image by cropping the frame and decimating any pixel duplication.
+
+**Auto-Decimate**: When set to "Infoframe" (recommended when using DV1), the RetroTINK-4K will use the DV1 infoframe data to set the correct decimation factor. "Measure" will try to guess the best decimation setting based on the characteristics of the image. Auto-Decimate can be disabled by selecting "Off".
+
+**Auto-Crop**: When set to "On", the RetroTINK-4K will use the DV1 infoframe data to automatically crop any black borders. Auto-Crop can be disabled by choosing "Off".
+
+Note that DV1 input can also automatically trigger profile changes, using the Auto Load DV1 Profile function:
+
+- **Auto Load DV1**: Will automatically load a DV1 profile, based on the detected DV1-compatible MiSTer core. Requires the name of the profile to match the core name, and for the profile to be located in the DV1 folder. Example: `sdcard/profile/dv1/core-name.rt4`.
+
+### Typical Use Cases for DV1 Mode with RetroTINK-4K
+
+1. **Automatic Profile Loading per Core**: By utilizing the Auto Load DV1 feature, the RetroTINK-4K can automatically load specific profiles per core. This is especially useful when combined with Scanlines (CRT Simulation) profiles for each machine, ensuring the correct display configuration with pixel-accurate representation through the auto-decimation and auto-crop features.
+
+2. **Vertical (Tate) Mode for Arcade Cores**: Another use case is to automatically switch and activate Tate mode (vertical orientation) for specific arcade cores. This ensures the correct display format without manual intervention.
+
+3. **Profile Overrides for Specific Display Needs**: You can always force a certain profile for a console or core if needed. For example, if you want to use a zoomed-in display or have a different preferred display configuration, the override function allows for complete flexibility.
 
 ## Table of Contents
 
@@ -59,6 +79,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
   - **Kuro Houou Profiles**: [Google Drive Link](https://drive.google.com/drive/folders/1zxQqn36P6QPx3mu83SuNplTbbwID1YA2)
   - **Wobbling Pixels Profiles**: [Google Drive Link](https://drive.google.com/drive/folders/1vMn27wOXiCCT9tSqCKr89IhdP3nXP-V5)
 - **MiSTer FPGA**: Up-to-date SD card with the latest core updates.
+- **Python 3**: Optional, recommended for faster execution of the HDMI input override feature.
 
 ## Installation
 
@@ -94,6 +115,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - `-r`, `--rt4k PATH` : Set RetroTINK 4K SD card root path.
 - `-m`, `--mister PATH` : Set MiSTer root path (local path or SSH URL).
 - `-f`, `--force` : Force overwrite of existing profiles.
+- `-i`, `--set-hdmi-input` : Enable HDMI input override in profiles.
 
 ## Examples
 
@@ -134,7 +156,14 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
    ./generate_rt4k_mister_dv1_profiles.sh --force
    ```
 
-8. **Display Help Message**:
+8. **Set HDMI Input for All Profiles**:
+   ```bash
+   ./generate_rt4k_mister_dv1_profiles.sh --set-hdmi-input
+   ```
+
+   Note: If Python3 is available, this operation will be executed using Python (fast). If Python3 is not installed, a Bash implementation (slow) will be used.
+
+9. **Display Help Message**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --help
    ```
@@ -181,7 +210,7 @@ To create per-core profile overrides, edit `profiles_config.sh` and add or uncom
 # Define per-core profiles override
 PRF_NES="${RT4K}profile/Nintendo NES + FC/FirebrandX HDRV-Low NTSC/NES DAR 09x.rt4"
 PRF_SNES="${RT4K}profile/Nintendo SNES + SFC/Wobbling Pixels NTSC & PAL RGBL - Sharp/SNES & SFC DAR - Sharp.rt4"
-PRF_GENESIS="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
+PRF_MEGADRIVE="${RT4K}profile/Sega Genesis & Mega Drive/Wobbling Pixels NTSC & PAL RGBL - Sharp/Genesis & MD DAR - Sharp.rt4"
 
 # Predefined cores (initially commented out for easy customization)
 # Uncomment and specify the desired profile
@@ -222,6 +251,20 @@ The script will generate `.rt4` profile files in the following directory:
 - **Verbose Mode**: Use the `--verbose` or `-v` option to enable detailed output of the script’s actions.
 - **Error Messages**: Any errors encountered will be displayed in the console, regardless of the verbosity setting.
 
+## HDMI Input Override
+
+The **HDMI Input Override** feature is used to set the HDMI input in the generated `.rt4` profiles, ensuring compatibility with the RetroTINK 4K device. You can enable this feature by using the `--set-hdmi-input` or `-i` option when running the script. When enabled, the script will modify each profile to specify HDMI as the input source.
+
+If **Python3** is installed, the HDMI input override will be executed using a Python script, providing a **faster** and more efficient method of modification. If Python3 is **not available**, the script will fall back to a Bash implementation, which is slower but still effective.
+
+This feature is particularly useful if your RetroTINK 4K setup requires all profiles to default to HDMI input for seamless operation with the MiSTer FPGA.
+
+Example:
+
+```bash
+./generate_rt4k_mister_dv1_profiles.sh --set-hdmi-input
+```
+
 ## SSH Key-Based Authentication Setup on MiSTer
 
 Below is a step-by-step guide on setting up SSH key-based authentication between your local machine and your MiSTer device.
@@ -229,7 +272,7 @@ This will allow you to SSH into your MiSTer without typing a password each time.
 
 ### Setting Up SSH Key-Based Authentication on MiSTer
 For better security, it’s recommended to generate the SSH key pair on your local machine and copy the public key to the MiSTer device.
-If you are familiar with ssh, please also define a pathphrase to be more secure.
+If you are familiar with ssh, please also define a passphrase to be more secure.
 
 #### Prerequisites
 
@@ -244,7 +287,7 @@ If you are familiar with ssh, please also define a pathphrase to be more secure.
    ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
    ```
 
-2. **When prompted, write it to a specific path and let the pathphrase empty**
+2. **When prompted, write it to a specific path and let the passphrase empty**
    ```bash
    ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
    Generating public/private rsa key pair.
@@ -277,7 +320,7 @@ If you are familiar with ssh, please also define a pathphrase to be more secure.
    ssh mister
    ```
 
-5. **Now you can run the tool simply like this (assuming the IP of your mister does not change ;)**
+5. **Now you can run the tool simply like this (assuming the IP of your MiSTer does not change ;))**
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --verbose -m ssh://mister
    ```
@@ -329,7 +372,7 @@ Contributions are welcome! Please open an issue or submit a pull request if you 
 - [x] Feature: add SSH remote retrieval of the core names on the MiSTer (allows execution without removing the SD card from the MiSTer)
 - [x] Feature: Add DV1 Arcade profiles management. Read MiSTer MRA file and create DV1 Arcade list based on `<setname>` (e.g., `sfa2.zip` > `sfa2.rt4`)
 - [x] Feature: Add override profiles option
-- [ ] Feature: Add automatic DV1 profile input set to HDMI
+- [x] Feature: Add automatic DV1 profile input set to HDMI
 
 ## License
 
@@ -344,3 +387,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 ## Contact
 
 For questions, suggestions, or support, please open an issue on the GitHub repository.
+
