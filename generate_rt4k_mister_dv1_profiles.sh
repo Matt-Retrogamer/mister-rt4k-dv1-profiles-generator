@@ -205,32 +205,41 @@ sanitize_var_name() {
 set_hdmi_input() {
   local profile_path="$1"
 
-  # Offsets and values based on the RT4K profile structure
-  local header_size=128                # Header size in bytes
-  local input_source_offset=22505      # Offset in data section (excluding header)
-  local total_input_offset=$((header_size + input_source_offset))  # Total offset in file
+  # Check if Python 3 and the Python script are available
+  if command -v python3 >/dev/null 2>&1 && [ -f "tools/set_hdmi_input_python/set_hdmi_input.py" ]; then
+    # Call the Python script
+    log "Setting input to HDMI for profile: $profile_path (python3 implementation - Fast)"
+    python3 tools/set_hdmi_input_python/set_hdmi_input.py "$profile_path"
+  else
+    log "Setting input to HDMI for profile: $profile_path (Bash implementation - Slow)"
 
-  local input_source_hdmi_value=0      # Value representing HDMI input (from definitions)
+    # Offsets and values based on the RT4K profile structure
+    local header_size=128                # Header size in bytes
+    local input_source_offset=22505      # Offset in data section (excluding header)
+    local total_input_offset=$((header_size + input_source_offset))  # Total offset in file
 
-  # Write the HDMI input value at the specified offset
-  printf "%02x" "$input_source_hdmi_value" | xxd -r -p | dd of="$profile_path" bs=1 seek="$total_input_offset" count=1 conv=notrunc status=none
+    local input_source_hdmi_value=0      # Value representing HDMI input (from definitions)
 
-  # Read the data starting from offset 128 to the end of the file
-  local crc_data_hex
-  crc_data_hex=$(dd if="$profile_path" bs=1 skip=128 status=none | xxd -p -c 256 | tr -d '\n')
+    # Write the HDMI input value at the specified offset
+    printf "%02x" "$input_source_hdmi_value" | xxd -r -p | dd of="$profile_path" bs=1 seek="$total_input_offset" count=1 conv=notrunc status=none
 
-  # Calculate the CRC16 using the provided algorithm
-  local crc
-  crc=$(crc16 "$crc_data_hex")
+    # Read the data starting from offset 128 to the end of the file
+    local crc_data_hex
+    crc_data_hex=$(dd if="$profile_path" bs=1 skip=128 status=none | xxd -p -c 256 | tr -d '\n')
 
-  # Prepare the CRC bytes in little-endian order
-  local crc_low
-  local crc_high
-  crc_low=$(printf "%02x" $((crc & 0xFF)))
-  crc_high=$(printf "%02x" $(((crc >> 8) & 0xFF)))
+    # Calculate the CRC16 using the provided algorithm
+    local crc
+    crc=$(crc16 "$crc_data_hex")
 
-  # Combine CRC bytes and two zero bytes
-  printf "%s%s0000" "$crc_low" "$crc_high" | xxd -r -p | dd of="$profile_path" bs=1 seek=32 count=4 conv=notrunc status=none
+    # Prepare the CRC bytes in little-endian order
+    local crc_low
+    local crc_high
+    crc_low=$(printf "%02x" $((crc & 0xFF)))
+    crc_high=$(printf "%02x" $(((crc >> 8) & 0xFF)))
+
+    # Combine CRC bytes and two zero bytes
+    printf "%s%s0000" "$crc_low" "$crc_high" | xxd -r -p | dd of="$profile_path" bs=1 seek=32 count=4 conv=notrunc status=none
+  fi
 }
 
 # CRC16 calculation function in Bash (as per provided C code)

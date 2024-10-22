@@ -14,7 +14,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
 - **Per-Core Profile Overrides**: Supports custom per-core profiles through an override script (`profiles_config.sh`). The script includes predefined entries for all available MiSTer cores, making it easy to customize profiles by uncommenting the respective lines.
-- **Profile HDMI Input Override**: Allows setting the HDMI input for all DV1 profiles to ensure compatibility with the RetroTINK 4K. This feature can be enabled with the `--set-hdmi-input` option.
+- **Profile HDMI Input Override**: Allows setting the HDMI input for all DV1 profiles to ensure compatibility with the RetroTINK 4K. This feature can be enabled with the `--set-hdmi-input` option. If Python3 is installed, the HDMI input override is performed using a Python script for faster execution; otherwise, it falls back to a slower Bash implementation.
 - **Additional Arcade Profiles**: Processes additional arcade profiles listed in a text file.
 - **Force Overwrite**: Option to forcefully recreate and overwrite existing profiles with the `--force` flag.
 - **Special Case Handling**: Includes specific handling for certain cores like GBA, GBC, and menu cores.
@@ -59,6 +59,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
   - **Kuro Houou Profiles**: [Google Drive Link](https://drive.google.com/drive/folders/1zxQqn36P6QPx3mu83SuNplTbbwID1YA2)
   - **Wobbling Pixels Profiles**: [Google Drive Link](https://drive.google.com/drive/folders/1vMn27wOXiCCT9tSqCKr89IhdP3nXP-V5)
 - **MiSTer FPGA**: Up-to-date SD card with the latest core updates.
+- **Python 3**: Optional, recommended for faster execution of the HDMI input override feature.
 
 ## Installation
 
@@ -139,6 +140,8 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --set-hdmi-input
    ```
+
+   Note: If Python3 is available, this operation will be executed using Python (fast). If Python3 is not installed, a Bash implementation (slow) will be used.
 
 9. **Display Help Message**:
    ```bash
@@ -232,7 +235,9 @@ The script will generate `.rt4` profile files in the following directory:
 
 The **HDMI Input Override** feature is used to set the HDMI input in the generated `.rt4` profiles, ensuring compatibility with the RetroTINK 4K device. You can enable this feature by using the `--set-hdmi-input` or `-i` option when running the script. When enabled, the script will modify each profile to specify HDMI as the input source.
 
-This is particularly useful if your RetroTINK 4K setup requires all profiles to default to HDMI input for seamless operation with the MiSTer FPGA.
+If **Python3** is installed, the HDMI input override will be executed using a Python script, providing a **faster** and more efficient method of modification. If Python3 is **not available**, the script will fall back to a Bash implementation, which is slower but still effective.
+
+This feature is particularly useful if your RetroTINK 4K setup requires all profiles to default to HDMI input for seamless operation with the MiSTer FPGA.
 
 Example:
 
@@ -247,7 +252,7 @@ This will allow you to SSH into your MiSTer without typing a password each time.
 
 ### Setting Up SSH Key-Based Authentication on MiSTer
 For better security, it’s recommended to generate the SSH key pair on your local machine and copy the public key to the MiSTer device.
-If you are familiar with ssh, please also define a pathphrase to be more secure.
+If you are familiar with ssh, please also define a passphrase to be more secure.
 
 #### Prerequisites
 
@@ -262,7 +267,7 @@ If you are familiar with ssh, please also define a pathphrase to be more secure.
    ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
    ```
 
-2. **When prompted, write it to a specific path and let the pathphrase empty**
+2. **When prompted, write it to a specific path and let the passphrase empty**
    ```bash
    ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
    Generating public/private rsa key pair.
@@ -295,7 +300,7 @@ If you are familiar with ssh, please also define a pathphrase to be more secure.
    ssh mister
    ```
 
-5. **Now you can run the tool simply like this (assuming the IP of your mister does not change ;)**
+5. **Now you can run the tool simply like this (assuming the IP of your MiSTer does not change ;))**
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --verbose -m ssh://mister
    ```
@@ -362,3 +367,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 ## Contact
 
 For questions, suggestions, or support, please open an issue on the GitHub repository.
+
