@@ -22,6 +22,26 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 - **Verbose Output**: Optional verbose mode for detailed logging.
 - **Error Handling**: Checks for missing files and directories, providing meaningful error messages.
 
+## MiSTer DV1 Mode and RetroTINK-4K
+
+The RetroTINK-4K is compatible with the MiSTer's DirectVideo (aka DV1) video output mode. Compatible cores can output DV1 video over HDMI, which aims to preserve the original content's pixel-accurate video. To work within the HDMI standard, DV1 can often require resolution padding (black bars) and pixel multiplication. By including the padding and multiplication info in the HDMI transmission itself (via the HDMI SPD Infoframe), compatible devices can recreate a pixel-accurate image by cropping the frame and decimating any pixel duplication.
+
+**Auto-Decimate**: When set to "Infoframe" (recommended when using DV1), the RetroTINK-4K will use the DV1 infoframe data to set the correct decimation factor. "Measure" will try to guess the best decimation setting based on the characteristics of the image. Auto-Decimate can be disabled by selecting "Off".
+
+**Auto-Crop**: When set to "On", the RetroTINK-4K will use the DV1 infoframe data to automatically crop any black borders. Auto-Crop can be disabled by choosing "Off".
+
+Note that DV1 input can also automatically trigger profile changes, using the Auto Load DV1 Profile function:
+
+- **Auto Load DV1**: Will automatically load a DV1 profile, based on the detected DV1-compatible MiSTer core. Requires the name of the profile to match the core name, and for the profile to be located in the DV1 folder. Example: `sdcard/profile/dv1/core-name.rt4`.
+
+### Typical Use Cases for DV1 Mode with RetroTINK-4K
+
+1. **Automatic Profile Loading per Core**: By utilizing the Auto Load DV1 feature, the RetroTINK-4K can automatically load specific profiles per core. This is especially useful when combined with Scanlines (CRT Simulation) profiles for each machine, ensuring the correct display configuration with pixel-accurate representation through the auto-decimation and auto-crop features.
+
+2. **Vertical (Tate) Mode for Arcade Cores**: Another use case is to automatically switch and activate Tate mode (vertical orientation) for specific arcade cores. This ensures the correct display format without manual intervention.
+
+3. **Profile Overrides for Specific Display Needs**: You can always force a certain profile for a console or core if needed. For example, if you want to use a zoomed-in display or have a different preferred display configuration, the override function allows for complete flexibility.
+
 ## Table of Contents
 
 - [Requirements](#requirements)
