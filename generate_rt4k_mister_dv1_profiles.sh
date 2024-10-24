@@ -449,6 +449,26 @@ additional_handling() {
     skipped_profiles=$((skipped_profiles + 1))
   fi
 
+  # Rename GameboyColor.rt4 to GBC.rt4 if GBC.rt4 does not exist or FORCE is set
+  if [ "$FORCE" -eq 1 ] || [ ! -f "${RT4K}profile/DV1/GBC.rt4" ]; then
+    if [ -f "${RT4K}profile/DV1/GameboyColor.rt4" ]; then
+      log "Renaming GameboyColor.rt4 to GBC.rt4"
+      if mv -f "${RT4K}profile/DV1/GameboyColor.rt4" "${RT4K}profile/DV1/GBC.rt4"; then
+        if [ "$FORCE" -eq 1 ]; then
+          overwritten_profiles=$((overwritten_profiles + 1))
+        else
+          created_profiles=$((created_profiles + 1))
+        fi
+      else
+        echo "Error: Failed to rename GameboyColor.rt4 to GBC.rt4"
+        errors=$((errors + 1))
+      fi
+    fi
+  else
+    log "GBC.rt4 already exists. Skipping rename."
+    skipped_profiles=$((skipped_profiles + 1))
+  fi
+
   # Menu Core
   dest_profile="${RT4K}profile/DV1/Menu.rt4"
   if [ -f "$dest_profile" ]; then
@@ -488,6 +508,7 @@ main() {
 
   # Process cores and profiles
   process_cores "Console" "_Console/" "$PRF_CONSOLE" "rbf" "_"
+  process_cores "Console" "_Console/" "$PRF_CONSOLE" "mgl" "_"
   process_cores "Arcade" "games/mame/" "$PRF_ARCADE" "zip" ""
   process_cores "Computer" "_Computer/" "$PRF_CONSOLE" "rbf" "_"
   process_cores "Utility" "_Utility/" "$PRF_CONSOLE" "rbf" "_"
