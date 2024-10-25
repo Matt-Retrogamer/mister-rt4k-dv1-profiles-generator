@@ -172,6 +172,14 @@ overwritten_profiles=0
 skipped_profiles=0
 errors=0
 
+# Renaming rules (original_name target_name)
+declare -a renaming_rules=(
+  "TurboGrafx16.rt4 TGFX16.rt4"
+  "GameboyColor.rt4 GBC.rt4"
+  "PocketChallengeV2.rt4 PocketChalleng.rt4"
+  "WonderSwanColor.rt4 WonderSwanColo.rt4"
+)
+
 # Function to get file list (handles local and remote paths)
 get_file_list() {
   local path="$1"
@@ -298,6 +306,7 @@ process_cores() {
       core_name=${filename%%"$delimiter"*}
     else
       core_name=${filename%.*}  # Remove file extension
+      core_name=$(echo $core_name | tr -d ' ')
     fi
 
     # Skip if core_name is empty
@@ -429,45 +438,39 @@ process_additional_arcade_profiles() {
 
 # Function for additional handling and specific profiles
 additional_handling() {
-  # Rename TurboGrafx16.rt4 to TGFX16.rt4 if TGFX16.rt4 does not exist or FORCE is set
-  if [ "$FORCE" -eq 1 ] || [ ! -f "${RT4K}profile/DV1/TGFX16.rt4" ]; then
-    if [ -f "${RT4K}profile/DV1/TurboGrafx16.rt4" ]; then
-      log "Renaming TurboGrafx16.rt4 to TGFX16.rt4"
-      if mv -f "${RT4K}profile/DV1/TurboGrafx16.rt4" "${RT4K}profile/DV1/TGFX16.rt4"; then
-        if [ "$FORCE" -eq 1 ]; then
-          overwritten_profiles=$((overwritten_profiles + 1))
-        else
-          created_profiles=$((created_profiles + 1))
-        fi
-      else
-        echo "Error: Failed to rename TurboGrafx16.rt4 to TGFX16.rt4"
-        errors=$((errors + 1))
-      fi
-    fi
-  else
-    log "TGFX16.rt4 already exists. Skipping rename."
-    skipped_profiles=$((skipped_profiles + 1))
-  fi
+  # Loop over the renaming rules
+  for rule in "${renaming_rules[@]}"; do
+    # Split rule into original_name and target_name
+    original_name="${rule%% *}"
+    target_name="${rule#* }"
 
-  # Rename GameboyColor.rt4 to GBC.rt4 if GBC.rt4 does not exist or FORCE is set
-  if [ "$FORCE" -eq 1 ] || [ ! -f "${RT4K}profile/DV1/GBC.rt4" ]; then
-    if [ -f "${RT4K}profile/DV1/GameboyColor.rt4" ]; then
-      log "Renaming GameboyColor.rt4 to GBC.rt4"
-      if mv -f "${RT4K}profile/DV1/GameboyColor.rt4" "${RT4K}profile/DV1/GBC.rt4"; then
-        if [ "$FORCE" -eq 1 ]; then
-          overwritten_profiles=$((overwritten_profiles + 1))
+    # Source and destination profile paths
+    src_file="${RT4K}profile/DV1/${original_name}"
+    dest_file="${RT4K}profile/DV1/${target_name}"
+
+    # Check if the destination profile exists
+    if [ "$FORCE" -eq 1 ] || [ ! -f "$dest_file" ]; then
+      if [ -f "$src_file" ]; then
+        log "Renaming ${original_name} to ${target_name}"
+        if mv -f "$src_file" "$dest_file"; then
+          if [ "$FORCE" -eq 1 ]; then
+            overwritten_profiles=$((overwritten_profiles + 1))
+          else
+            created_profiles=$((created_profiles + 1))
+          fi
         else
-          created_profiles=$((created_profiles + 1))
+          echo "Error: Failed to rename ${original_name} to ${target_name}"
+          errors=$((errors + 1))
         fi
       else
-        echo "Error: Failed to rename GameboyColor.rt4 to GBC.rt4"
-        errors=$((errors + 1))
+        log "Source file ${original_name} not found. Skipping."
+        skipped_profiles=$((skipped_profiles + 1))
       fi
+    else
+      log "${target_name} already exists. Skipping rename."
+      skipped_profiles=$((skipped_profiles + 1))
     fi
-  else
-    log "GBC.rt4 already exists. Skipping rename."
-    skipped_profiles=$((skipped_profiles + 1))
-  fi
+  done
 
   # Menu Core
   dest_profile="${RT4K}profile/DV1/Menu.rt4"
@@ -508,7 +511,7 @@ main() {
 
   # Process cores and profiles
   process_cores "Console" "_Console/" "$PRF_CONSOLE" "rbf" "_"
-  process_cores "Console" "_Console/" "$PRF_CONSOLE" "mgl" "_"
+  process_cores "Console" "_Console/" "$PRF_CONSOLE" "mgl" ""
   process_cores "Arcade" "games/mame/" "$PRF_ARCADE" "zip" ""
   process_cores "Computer" "_Computer/" "$PRF_CONSOLE" "rbf" "_"
   process_cores "Utility" "_Utility/" "$PRF_CONSOLE" "rbf" "_"
