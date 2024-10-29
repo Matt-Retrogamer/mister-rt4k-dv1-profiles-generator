@@ -86,6 +86,9 @@ if [ -z "$RT4K" ] || [ ! -d "$RT4K" ]; then
   exit 1
 fi
 
+# Ensure RT4K path ends with a slash
+[[ "${RT4K}" != */ ]] && RT4K="${RT4K}/"
+
 # Determine if MISTER path is remote
 if [[ "$MISTER" == ssh://* ]]; then
   REMOTE_MISTER=1
@@ -179,6 +182,14 @@ declare -a renaming_rules=(
   "PocketChallengeV2.rt4 PocketChalleng.rt4"
   "WonderSwanColor.rt4 WonderSwanColo.rt4"
 )
+
+# Create an associative array for quick lookup
+declare -A renaming_map
+for rule in "${renaming_rules[@]}"; do
+  original_name="${rule%% *}"
+  target_name="${rule#* }"
+  renaming_map["$original_name"]="$target_name"
+done
 
 # Function to get file list (handles local and remote paths)
 get_file_list() {
@@ -335,7 +346,20 @@ process_cores() {
     fi
 
     # Destination profile path
-    dest_profile="${RT4K}profile/DV1/${core_name}.rt4"
+    profile_name="${core_name}.rt4"
+
+    # Check if the profile is scheduled for renaming
+    if [[ -n "${renaming_map[$profile_name]:-}" ]]; then
+      target_name="${renaming_map[$profile_name]}"
+      dest_profile_target="${RT4K}profile/DV1/${target_name}"
+      if [ -f "$dest_profile_target" ] && [ "$FORCE" -eq 0 ]; then
+        log "Profile ${target_name} already exists. Skipping creation of ${profile_name}."
+        skipped_profiles=$((skipped_profiles + 1))
+        continue
+      fi
+    fi
+
+    dest_profile="${RT4K}profile/DV1/${profile_name}"
 
     # Check if the profile exists
     if [ -f "$dest_profile" ]; then
@@ -396,13 +420,6 @@ process_additional_arcade_profiles() {
       base_profile_to_use="$PRF_ARCADE"
     fi
 
-    # Check if the base profile file exists
-    if [ ! -f "$base_profile_to_use" ]; then
-      echo "Error: Base profile file not found: $base_profile_to_use for core $filename"
-      errors=$((errors + 1))
-      continue
-    fi
-
     dest_profile="${RT4K}profile/DV1/${filename}.rt4"
     # Check if the profile exists
     if [ -f "$dest_profile" ]; then
@@ -448,9 +465,10 @@ additional_handling() {
     src_file="${RT4K}profile/DV1/${original_name}"
     dest_file="${RT4K}profile/DV1/${target_name}"
 
-    # Check if the destination profile exists
-    if [ "$FORCE" -eq 1 ] || [ ! -f "$dest_file" ]; then
-      if [ -f "$src_file" ]; then
+    # Check if the source file exists
+    if [ -f "$src_file" ]; then
+      # Check if the destination profile exists
+      if [ "$FORCE" -eq 1 ] || [ ! -f "$dest_file" ]; then
         log "Renaming ${original_name} to ${target_name}"
         if mv -f "$src_file" "$dest_file"; then
           if [ "$FORCE" -eq 1 ]; then
@@ -463,12 +481,12 @@ additional_handling() {
           errors=$((errors + 1))
         fi
       else
-        log "Source file ${original_name} not found. Skipping."
+        log "${target_name} already exists. Skipping rename."
         skipped_profiles=$((skipped_profiles + 1))
       fi
     else
-      log "${target_name} already exists. Skipping rename."
-      skipped_profiles=$((skipped_profiles + 1))
+      log "Source file ${original_name} not found. Skipping rename."
+      # No need to increment skipped_profiles here since it wasn't generated in this run
     fi
   done
 
