@@ -120,6 +120,9 @@ else
   MISTER_PATH="$MISTER"
 fi
 
+# Ensure MISTER_PATH ends with a slash
+[[ "${MISTER_PATH}" != */ ]] && MISTER_PATH="${MISTER_PATH}/"
+
 # Debug output
 log "MiSTer Path: $MISTER_PATH"
 if [ "$REMOTE_MISTER" -eq 1 ]; then
@@ -183,13 +186,29 @@ declare -a renaming_rules=(
   "WonderSwanColor.rt4 WonderSwanColo.rt4"
 )
 
-# Create an associative array for quick lookup
-declare -A renaming_map
+# Replace associative array with two regular arrays
+renaming_map_keys=()
+renaming_map_values=()
+
 for rule in "${renaming_rules[@]}"; do
   original_name="${rule%% *}"
   target_name="${rule#* }"
-  renaming_map["$original_name"]="$target_name"
+  renaming_map_keys+=("$original_name")
+  renaming_map_values+=("$target_name")
 done
+
+# Function to get target name from original name
+get_target_name() {
+  local original_name="$1"
+  local i
+  for i in "${!renaming_map_keys[@]}"; do
+    if [[ "${renaming_map_keys[$i]}" == "$original_name" ]]; then
+      echo "${renaming_map_values[$i]}"
+      return
+    fi
+  done
+  echo ""
+}
 
 # Function to get file list (handles local and remote paths)
 get_file_list() {
@@ -349,8 +368,8 @@ process_cores() {
     profile_name="${core_name}.rt4"
 
     # Check if the profile is scheduled for renaming
-    if [[ -n "${renaming_map[$profile_name]:-}" ]]; then
-      target_name="${renaming_map[$profile_name]}"
+    target_name="$(get_target_name "$profile_name")"
+    if [[ -n "$target_name" ]]; then
       dest_profile_target="${RT4K}profile/DV1/${target_name}"
       if [ -f "$dest_profile_target" ] && [ "$FORCE" -eq 0 ]; then
         log "Profile ${target_name} already exists. Skipping creation of ${profile_name}."
