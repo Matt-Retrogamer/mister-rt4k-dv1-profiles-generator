@@ -313,7 +313,7 @@ crc16() {
   echo $(( crc & 0xFFFF ))
 }
 
-# Function to process cores
+# Function to process cores (generic for console/computer/utility)
 process_cores() {
   local core_type="$1"
   local source_dir="$2"
@@ -336,7 +336,7 @@ process_cores() {
       core_name=${filename%%"$delimiter"*}
     else
       core_name=${filename%.*}  # Remove file extension
-      core_name=$(echo $core_name | tr -d ' ')
+      core_name=$(echo "$core_name" | tr -d ' ')
     fi
 
     # Skip if core_name is empty
@@ -410,6 +410,97 @@ process_cores() {
       fi
     fi
   done < <(get_file_list "$source_path" "$file_ext")
+}
+
+# Process Arcade cores using the <setname> from each .mra file
+process_arcade_cores() {
+  local source_dir="_Arcade/"
+  local default_base_profile="$PRF_ARCADE"
+  local source_path="${MISTER_PATH}${source_dir}"
+
+  if ! directory_exists "$source_path"; then
+    log "Warning: Source directory not found: $source_path"
+    return
+  fi
+
+  while IFS= read -r mra_file; do
+    [[ -z "$mra_file" ]] && continue
+
+    local full_path="${source_path}${mra_file}"
+    # Extract <setname> from the MRA file
+    local setname
+    setname="$(sed -n -E 's/.*<setname>([^<]+)<\/setname>.*/\1/p' "$full_path")"
+
+    if [[ -z "$setname" ]]; then
+      log "Warning: No setname found in MRA file: $mra_file. Skipping."
+      continue
+    fi
+
+    # Sanitize setname
+    local sanitized_core_name=$(sanitize_var_name "$setname")
+    local var_name="PRF_${sanitized_core_name}"
+
+    # Determine the base profile to use
+    local base_profile_to_use
+    if [ -n "${!var_name:-}" ]; then
+      base_profile_to_use="${!var_name}"
+    else
+      base_profile_to_use="$default_base_profile"
+    fi
+
+    # Check if the base profile file exists
+    if [ ! -f "$base_profile_to_use" ]; then
+      echo "Error: Base profile file not found: $base_profile_to_use for core $setname"
+      errors=$((errors + 1))
+      continue
+    fi
+
+    local profile_name="${setname}.rt4"
+
+    # Check if the profile is scheduled for renaming
+    local target_name
+    target_name="$(get_target_name "$profile_name")"
+    if [[ -n "$target_name" ]]; then
+      local dest_profile_target="${RT4K}profile/DV1/${target_name}"
+      if [ -f "$dest_profile_target" ] && [ "$FORCE" -eq 0 ]; then
+        log "Profile ${target_name} already exists. Skipping creation of ${profile_name}."
+        skipped_profiles=$((skipped_profiles + 1))
+        continue
+      fi
+    fi
+
+    local dest_profile="${RT4K}profile/DV1/${profile_name}"
+
+    # Check if the profile exists
+    if [ -f "$dest_profile" ]; then
+      if [ "$FORCE" -eq 1 ]; then
+        log "Overwriting existing profile for ${setname}"
+        if cp "$base_profile_to_use" "$dest_profile"; then
+          if [ "$SET_HDMI_INPUT" -eq 1 ]; then
+            set_hdmi_input "$dest_profile"
+          fi
+          overwritten_profiles=$((overwritten_profiles + 1))
+        else
+          echo "Error: Failed to overwrite profile for ${setname}"
+          errors=$((errors + 1))
+        fi
+      else
+        log "${setname}.rt4 already exists. Skipping."
+        skipped_profiles=$((skipped_profiles + 1))
+      fi
+    else
+      log "Creating profile for ${setname}"
+      if cp "$base_profile_to_use" "$dest_profile"; then
+        if [ "$SET_HDMI_INPUT" -eq 1 ]; then
+          set_hdmi_input "$dest_profile"
+        fi
+        created_profiles=$((created_profiles + 1))
+      else
+        echo "Error: Failed to create profile for ${setname}"
+        errors=$((errors + 1))
+      fi
+    fi
+  done < <(get_file_list "$source_path" "mra")
 }
 
 # Function to process additional Arcade profiles from a text file
@@ -549,9 +640,13 @@ main() {
   # Process cores and profiles
   process_cores "Console" "_Console/" "$PRF_CONSOLE" "rbf" "_"
   process_cores "Console" "_Console/" "$PRF_CONSOLE" "mgl" ""
-  process_cores "Arcade" "games/mame/" "$PRF_ARCADE" "zip" ""
+  
+  # Arcade: creates profiles based on the setname field of each mra file in _Arcade/
+  process_arcade_cores
+  
   process_cores "Computer" "_Computer/" "$PRF_CONSOLE" "rbf" "_"
   process_cores "Utility" "_Utility/" "$PRF_CONSOLE" "rbf" "_"
+
   process_additional_arcade_profiles
   additional_handling
 

@@ -10,6 +10,7 @@ By scanning your MiSTer directories—either locally or remotely via SSH—for c
 
 - **Automated Profile Generation**: Scans MiSTer core directories and creates corresponding `.rt4` profiles.
 - **Supports Multiple Core Types**: Handles console, arcade, computer, and utility cores.
+- **Arcade Core Profiles from `.mra` Files**: Automatically generates arcade profiles based on the `<setname>` field in `.mra` files from the `/media/fat/_Arcade/` directory. This ensures accurate profile names matching the core’s expected setname.
 - **SSH Remote Retrieval**: Optionally retrieves core names from a remote MiSTer device via SSH, eliminating the need to remove the SD card.
 - **Default MiSTer Path and SSH User**: Assumes default MiSTer path `/media/fat/` and SSH user `root` if not specified.
 - **Customizable Base Profiles**: Allows you to specify base profiles for different core types.
