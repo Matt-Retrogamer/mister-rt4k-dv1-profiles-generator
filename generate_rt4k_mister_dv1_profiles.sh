@@ -215,9 +215,32 @@ get_file_list() {
   local path="$1"
   local ext="$2"
   if [ "$REMOTE_MISTER" -eq 1 ]; then
-    ssh "${SSH_USER}@${SSH_HOST}" "find \"$path\" -maxdepth 1 -type f -name '*.$ext' -exec basename {} \;" 2>/dev/null || true
+    ssh "${SSH_USER}@${SSH_HOST}" "find \"$path\" -maxdepth 1 -type f -name '*.$ext' -exec basename \"{}\" \;" 2>/dev/null || true
   else
-    find "$path" -maxdepth 1 -type f -name "*.$ext" -exec basename {} \; 2>/dev/null || true
+    find "$path" -maxdepth 1 -type f -name "*.$ext" -exec basename "{}" \; 2>/dev/null || true
+  fi
+}
+
+###############################################################################
+# Retrieves .mra filenames and their <setname> in a single pass
+###############################################################################
+get_mra_setnames() {
+  local path="$1"
+  if [ "$REMOTE_MISTER" -eq 1 ]; then
+    ssh "${SSH_USER}@${SSH_HOST}" bash -s <<EOF || true
+      find "$path" -maxdepth 1 -type f -name '*.mra' -print0 |
+      while IFS= read -r -d '' file; do
+        setname=\$(sed -n -E 's/.*<setname>([^<]+)<\\/setname>.*/\\1/p' "\$file")
+        echo "\$(basename "\$file")"\$'\t'"\$setname"
+      done
+EOF
+  else
+    find "$path" -maxdepth 1 -type f -name '*.mra' -print0 |
+    while IFS= read -r -d '' file; do
+      local setname
+      setname=$(sed -n -E 's/.*<setname>([^<]+)<\/setname>.*/\1/p' "$file")
+      echo "$(basename "$file")"$'\t'"$setname"
+    done
   fi
 }
 
@@ -423,19 +446,15 @@ process_arcade_cores() {
     return
   fi
 
-  while IFS= read -r mra_file; do
+  while IFS=$'\t' read -r mra_file setname; do
     [[ -z "$mra_file" ]] && continue
-
-    local full_path="${source_path}${mra_file}"
-    # Extract <setname> from the MRA file
-    local setname
-    setname="$(sed -n -E 's/.*<setname>([^<]+)<\/setname>.*/\1/p' "$full_path")"
 
     if [[ -z "$setname" ]]; then
       log "Warning: No setname found in MRA file: $mra_file. Skipping."
       continue
     fi
 
+    local full_path="${source_path}${mra_file}"
     # Sanitize setname
     local sanitized_core_name=$(sanitize_var_name "$setname")
     local var_name="PRF_${sanitized_core_name}"
@@ -500,7 +519,7 @@ process_arcade_cores() {
         errors=$((errors + 1))
       fi
     fi
-  done < <(get_file_list "$source_path" "mra")
+  done < <(get_mra_setnames "$source_path")
 }
 
 # Function to process additional Arcade profiles from a text file
