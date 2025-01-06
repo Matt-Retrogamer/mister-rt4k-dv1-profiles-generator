@@ -89,10 +89,11 @@ fi
 # Ensure RT4K path ends with a slash
 [[ "${RT4K}" != */ ]] && RT4K="${RT4K}/"
 
-# Determine if MISTER path is remote
+# Determine if MISTER path is remote and set up SSH multiplexing
 if [[ "$MISTER" == ssh://* ]]; then
   REMOTE_MISTER=1
   MISTER_SSH_URL="${MISTER#ssh://}"
+  
   # Default values
   SSH_USER="root"
   MISTER_PATH="/media/fat/"
@@ -115,13 +116,44 @@ if [[ "$MISTER" == ssh://* ]]; then
   else
     SSH_HOST="$MISTER_SSH_REST"
   fi
+
+  # Ensure MISTER_PATH ends with a slash
+  [[ "${MISTER_PATH}" != */ ]] && MISTER_PATH="${MISTER_PATH}/"
+
+  # SSH Multiplexing Configuration
+  SSH_CONTROL_PATH="/tmp/mister-ssh-ctl.sock"
+  SSH_OPTIONS="-o ControlMaster=auto -o ControlPath=${SSH_CONTROL_PATH} -o ControlPersist=600"
+  
+  # Function to establish SSH master connection
+  establish_ssh_master() {
+    if ! ssh -o ControlPath="${SSH_CONTROL_PATH}" -O check "${SSH_USER}@${SSH_HOST}" 2>/dev/null; then
+      log "Establishing master SSH connection to ${SSH_USER}@${SSH_HOST}"
+      ssh -N ${SSH_OPTIONS} "${SSH_USER}@${SSH_HOST}" &
+      SSH_MASTER_PID=$!
+      # Wait a moment to ensure the master connection is established
+      sleep 1
+    fi
+  }
+
+  # Function to close SSH master connection
+  close_ssh_master() {
+    if [ -n "${SSH_MASTER_PID:-}" ]; then
+      log "Closing master SSH connection to ${SSH_USER}@${SSH_HOST}"
+      ssh -O exit ${SSH_OPTIONS} "${SSH_USER}@${SSH_HOST}" 2>/dev/null
+      wait "$SSH_MASTER_PID" 2>/dev/null
+      rm -f "${SSH_CONTROL_PATH}"
+    fi
+  }
+
+  # Establish SSH master connection
+  establish_ssh_master
+
+  # Ensure SSH master connection is closed on script exit
+  trap close_ssh_master EXIT
 else
   REMOTE_MISTER=0
   MISTER_PATH="$MISTER"
 fi
-
-# Ensure MISTER_PATH ends with a slash
-[[ "${MISTER_PATH}" != */ ]] && MISTER_PATH="${MISTER_PATH}/"
 
 # Debug output
 log "MiSTer Path: $MISTER_PATH"
@@ -140,7 +172,7 @@ fi
 
 if [ "$REMOTE_MISTER" -eq 1 ]; then
   # Check if remote directory exists
-  if ! ssh "${SSH_USER}@${SSH_HOST}" "[ -d \"$MISTER_PATH\" ]"; then
+  if ! ssh ${SSH_OPTIONS} "${SSH_USER}@${SSH_HOST}" "[ -d \"$MISTER_PATH\" ]"; then
     echo "Error: MiSTer root path does not exist on remote host."
     exit 1
   fi
@@ -215,7 +247,7 @@ get_file_list() {
   local path="$1"
   local ext="$2"
   if [ "$REMOTE_MISTER" -eq 1 ]; then
-    ssh "${SSH_USER}@${SSH_HOST}" "find \"$path\" -maxdepth 1 -type f -name '*.$ext' -exec basename \"{}\" \;" 2>/dev/null || true
+    ssh ${SSH_OPTIONS} "${SSH_USER}@${SSH_HOST}" "find \"$path\" -maxdepth 1 -type f -name '*.$ext' -exec basename \"{}\" \;" 2>/dev/null || true
   else
     find "$path" -maxdepth 1 -type f -name "*.$ext" -exec basename "{}" \; 2>/dev/null || true
   fi
@@ -227,7 +259,7 @@ get_file_list() {
 get_mra_setnames() {
   local path="$1"
   if [ "$REMOTE_MISTER" -eq 1 ]; then
-    ssh "${SSH_USER}@${SSH_HOST}" bash -s <<EOF || true
+    ssh ${SSH_OPTIONS} "${SSH_USER}@${SSH_HOST}" bash -s <<EOF || true
       find "$path" -maxdepth 1 -type f -name '*.mra' -print0 |
       while IFS= read -r -d '' file; do
         setname=\$(sed -n -E 's/.*<setname>([^<]+)<\\/setname>.*/\\1/p' "\$file")
@@ -248,7 +280,7 @@ EOF
 directory_exists() {
   local path="$1"
   if [ "$REMOTE_MISTER" -eq 1 ]; then
-    ssh "${SSH_USER}@${SSH_HOST}" "[ -d \"$path\" ]"
+    ssh ${SSH_OPTIONS} "${SSH_USER}@${SSH_HOST}" "[ -d \"$path\" ]"
   else
     [ -d "$path" ]
   fi
