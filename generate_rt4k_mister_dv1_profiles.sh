@@ -178,6 +178,11 @@ overwritten_profiles=0
 skipped_profiles=0
 errors=0
 
+# Arrays to track profile names for detailed summary
+created_profile_names=()
+overwritten_profile_names=()
+skipped_profile_names=()
+
 # Renaming rules (original_name target_name)
 declare -a renaming_rules=(
   "TurboGrafx16.rt4 TGFX16.rt4"
@@ -412,6 +417,7 @@ process_cores() {
             set_hdmi_input "$dest_profile"
           fi
           overwritten_profiles=$((overwritten_profiles + 1))
+          overwritten_profile_names+=("${profile_name}")
         else
           echo "Error: Failed to overwrite profile for ${core_name}"
           errors=$((errors + 1))
@@ -419,6 +425,7 @@ process_cores() {
       else
         log "${core_name}.rt4 already exists. Skipping."
         skipped_profiles=$((skipped_profiles + 1))
+        skipped_profile_names+=("${profile_name}")
       fi
     else
       log "Creating profile for ${core_name}"
@@ -427,6 +434,7 @@ process_cores() {
           set_hdmi_input "$dest_profile"
         fi
         created_profiles=$((created_profiles + 1))
+        created_profile_names+=("${profile_name}")
       else
         echo "Error: Failed to create profile for ${core_name}"
         errors=$((errors + 1))
@@ -484,6 +492,7 @@ process_arcade_cores() {
       if [ -f "$dest_profile_target" ] && [ "$FORCE" -eq 0 ]; then
         log "Profile ${target_name} already exists. Skipping creation of ${profile_name}."
         skipped_profiles=$((skipped_profiles + 1))
+        skipped_profile_names+=("${target_name}")
         continue
       fi
     fi
@@ -499,6 +508,7 @@ process_arcade_cores() {
             set_hdmi_input "$dest_profile"
           fi
           overwritten_profiles=$((overwritten_profiles + 1))
+          overwritten_profile_names+=("${profile_name}")
         else
           echo "Error: Failed to overwrite profile for ${setname}"
           errors=$((errors + 1))
@@ -506,6 +516,7 @@ process_arcade_cores() {
       else
         log "${setname}.rt4 already exists. Skipping."
         skipped_profiles=$((skipped_profiles + 1))
+        skipped_profile_names+=("${profile_name}")
       fi
     else
       log "Creating profile for ${setname}"
@@ -514,6 +525,7 @@ process_arcade_cores() {
           set_hdmi_input "$dest_profile"
         fi
         created_profiles=$((created_profiles + 1))
+        created_profile_names+=("${profile_name}")
       else
         echo "Error: Failed to create profile for ${setname}"
         errors=$((errors + 1))
@@ -559,6 +571,7 @@ process_additional_arcade_profiles() {
             set_hdmi_input "$dest_profile"
           fi
           overwritten_profiles=$((overwritten_profiles + 1))
+          overwritten_profile_names+=("${filename}.rt4")
         else
           echo "Error: Failed to overwrite profile for ${filename}"
           errors=$((errors + 1))
@@ -566,6 +579,7 @@ process_additional_arcade_profiles() {
       else
         log "${filename}.rt4 already exists. Skipping."
         skipped_profiles=$((skipped_profiles + 1))
+        skipped_profile_names+=("${filename}.rt4")
       fi
     else
       log "Creating additional arcade profile for ${filename}"
@@ -574,6 +588,7 @@ process_additional_arcade_profiles() {
           set_hdmi_input "$dest_profile"
         fi
         created_profiles=$((created_profiles + 1))
+        created_profile_names+=("${filename}.rt4")
       else
         echo "Error: Failed to create profile for ${filename}"
         errors=$((errors + 1))
@@ -602,8 +617,10 @@ additional_handling() {
         if mv -f "$src_file" "$dest_file"; then
           if [ "$FORCE" -eq 1 ]; then
             overwritten_profiles=$((overwritten_profiles + 1))
+            overwritten_profile_names+=("${target_name}")
           else
             created_profiles=$((created_profiles + 1))
+            created_profile_names+=("${target_name}")
           fi
         else
           echo "Error: Failed to rename ${original_name} to ${target_name}"
@@ -612,6 +629,7 @@ additional_handling() {
       else
         log "${target_name} already exists. Skipping rename."
         skipped_profiles=$((skipped_profiles + 1))
+        skipped_profile_names+=("${target_name}")
       fi
     else
       log "Source file ${original_name} not found. Skipping rename."
@@ -629,6 +647,7 @@ additional_handling() {
           set_hdmi_input "$dest_profile"
         fi
         overwritten_profiles=$((overwritten_profiles + 1))
+        overwritten_profile_names+=("Menu.rt4")
       else
         echo "Error: Failed to overwrite Menu.rt4 profile"
         errors=$((errors + 1))
@@ -636,6 +655,7 @@ additional_handling() {
     else
       log "Menu.rt4 already exists. Skipping."
       skipped_profiles=$((skipped_profiles + 1))
+      skipped_profile_names+=("Menu.rt4")
     fi
   else
     log "Creating Menu.rt4 profile"
@@ -644,9 +664,34 @@ additional_handling() {
         set_hdmi_input "$dest_profile"
       fi
       created_profiles=$((created_profiles + 1))
+      created_profile_names+=("Menu.rt4")
     else
       echo "Error: Failed to create Menu.rt4 profile"
       errors=$((errors + 1))
+    fi
+  fi
+}
+
+# Function to display detailed profile summary
+show_profile_summary() {
+  local max_display=20
+  local list_type="$1"
+  local count="$2"
+  local array_name="$3"
+  
+  if [ "$count" -gt 0 ]; then
+    echo
+    # Create a temporary array name to work with
+    local temp_array_ref="${array_name}[@]"
+    local profiles=("${!temp_array_ref}")
+    
+    if [ "$count" -le "$max_display" ]; then
+      echo "Profiles ${list_type}:"
+      printf '  - %s\n' "${profiles[@]}"
+    else
+      echo "Profiles ${list_type} (showing first ${max_display} of ${count}):"
+      printf '  - %s\n' "${profiles[@]:0:$max_display}"
+      echo "  ... and $((count - max_display)) more"
     fi
   fi
 }
@@ -677,6 +722,11 @@ main() {
   if [ "$errors" -gt 0 ]; then
     echo "Errors encountered: $errors"
   fi
+
+  # Show detailed profile lists
+  show_profile_summary "created" "$created_profiles" created_profile_names
+  show_profile_summary "overwritten" "$overwritten_profiles" overwritten_profile_names
+  show_profile_summary "skipped" "$skipped_profiles" skipped_profile_names
 }
 
 # Execute main function
