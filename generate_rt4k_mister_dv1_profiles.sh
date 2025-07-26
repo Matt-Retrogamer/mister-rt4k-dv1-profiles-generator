@@ -184,6 +184,7 @@ declare -a renaming_rules=(
   "GameboyColor.rt4 GBC.rt4"
   "PocketChallengeV2.rt4 PocketChalleng.rt4"
   "WonderSwanColor.rt4 WonderSwanColo.rt4"
+  "CDi.rt4 cd-i.rt4"
 )
 
 # Replace associative array with two regular arrays
