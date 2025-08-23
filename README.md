@@ -117,6 +117,7 @@ Note that DV1 input can also automatically trigger profile changes, using the Au
 - `-m`, `--mister PATH` : Set MiSTer root path (local path or SSH URL).
 - `-f`, `--force` : Force overwrite of existing profiles.
 - `-i`, `--set-hdmi-input` : Enable HDMI input override in profiles.
+- `--ignore-cores CORES` : Comma-separated list of cores to ignore during profile generation.
 
 ## Examples
 
@@ -164,7 +165,14 @@ Note that DV1 input can also automatically trigger profile changes, using the Au
 
    Note: If Python3 is available, this operation will be executed using Python (fast). If Python3 is not installed, a Bash implementation (slow) will be used.
 
-9. **Display Help Message**:
+9. **Ignore Specific Cores During Profile Generation**:
+   ```bash
+   ./generate_rt4k_mister_dv1_profiles.sh --ignore-cores "PSX,Saturn,SMS"
+   ```
+
+   This will skip profile generation for the specified cores. Useful when you don't want profiles for certain systems.
+
+10. **Display Help Message**:
    ```bash
    ./generate_rt4k_mister_dv1_profiles.sh --help
    ```
@@ -228,6 +236,20 @@ Example of customization:
 PRF_NES="${RT4K}profile/Nintendo NES + FC/FirebrandX HDRV-Low NTSC/NES DAR 09x.rt4"
 ```
 This makes it easy to add or change the profile for any available core without needing to add the core name manually.
+
+### Ignoring Cores
+
+You can configure cores to be ignored during profile generation in two ways:
+
+1. **Via command line** (see example above)
+2. **Via configuration file**: Set the `IGNORE_CORES_FROM_CONFIG` variable in `profiles_config.sh`:
+
+```bash
+# Cores to ignore during profile generation (comma-separated)
+IGNORE_CORES_FROM_CONFIG="PSX,Saturn,SMS"
+```
+
+When cores are ignored, they will be skipped during all profile generation phases including regular cores, arcade cores, and additional arcade profiles.
 
 ## Additional Arcade Profiles
 

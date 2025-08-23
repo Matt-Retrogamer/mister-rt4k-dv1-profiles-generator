@@ -20,6 +20,7 @@ MISTER="${MISTER:-data/mister/}"
 VERBOSE=0
 FORCE=0
 SET_HDMI_INPUT=0  # New variable to control HDMI input override
+IGNORE_CORES=""   # New variable to store comma-separated list of cores to ignore
 
 # Function to show help message
 show_help() {
@@ -31,10 +32,12 @@ show_help() {
   echo "  -r, --rt4k PATH         Set RT4K SD Card root path"
   echo "  -m, --mister PATH       Set MiSTer root path (local path or SSH URL)"
   echo "  -i, --set-hdmi-input    Enable HDMI input override in profiles"
+  echo "  -x, --ignore-cores LIST Comma-separated list of cores to ignore (e.g., Menu,TurboGrafx16)"
   echo "Examples:"
   echo "  $0 --rt4k /media/rt4k/ --mister /media/fat/ --verbose --set-hdmi-input"
   echo "  $0 --rt4k /media/rt4k/ --mister ssh://192.168.1.100 --verbose --set-hdmi-input"
   echo "  $0 --rt4k /media/rt4k/ --mister ssh://user@hostname --force --verbose --set-hdmi-input"
+  echo "  $0 --ignore-cores Menu,TurboGrafx16 --verbose"
 }
 
 # Parse command-line arguments
@@ -59,6 +62,10 @@ while [[ $# -gt 0 ]]; do
     -i|--set-hdmi-input)
       SET_HDMI_INPUT=1
       shift
+      ;;
+    -x|--ignore-cores)
+      IGNORE_CORES="$2"
+      shift 2
       ;;
     -h|--help)
       show_help
@@ -160,6 +167,15 @@ else
   log "Config file $PROFILES_CONFIG_FILE not found. Using default profiles."
 fi
 
+# Merge ignore cores from config file and command line
+if [ -n "${IGNORE_CORES_FROM_CONFIG:-}" ]; then
+  if [ -n "$IGNORE_CORES" ]; then
+    IGNORE_CORES="${IGNORE_CORES},${IGNORE_CORES_FROM_CONFIG}"
+  else
+    IGNORE_CORES="$IGNORE_CORES_FROM_CONFIG"
+  fi
+fi
+
 # Set Base Profiles (Console, Arcade) - Fallback to defaults if not set in override
 PRF_CONSOLE="${PRF_CONSOLE:-${RT4K}profile/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4}"
 PRF_ARCADE="${PRF_ARCADE:-${RT4K}profile/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4}"
@@ -182,6 +198,24 @@ errors=0
 created_profile_names=()
 overwritten_profile_names=()
 skipped_profile_names=()
+
+# Initialize ignore cores list
+declare -a IGNORE_CORES_ARRAY
+if [ -n "$IGNORE_CORES" ]; then
+  IFS=',' read -ra IGNORE_CORES_ARRAY <<< "$IGNORE_CORES"
+  log "Cores to ignore: ${IGNORE_CORES_ARRAY[*]}"
+fi
+
+# Function to check if a core should be ignored
+is_core_ignored() {
+  local core_name="$1"
+  for ignored_core in "${IGNORE_CORES_ARRAY[@]}"; do
+    if [[ "$core_name" == "$ignored_core" ]]; then
+      return 0  # Core is ignored
+    fi
+  done
+  return 1  # Core is not ignored
+}
 
 # Renaming rules (original_name target_name)
 declare -a renaming_rules=(
@@ -374,6 +408,12 @@ process_cores() {
       continue
     fi
 
+    # Check if core should be ignored
+    if is_core_ignored "$core_name"; then
+      log "Ignoring core: $core_name"
+      continue
+    fi
+
     # Sanitize core_name
     sanitized_core_name=$(sanitize_var_name "$core_name")
     # Construct variable name
@@ -460,6 +500,12 @@ process_arcade_cores() {
 
     if [[ -z "$setname" ]]; then
       log "Warning: No setname found in MRA file: $mra_file. Skipping."
+      continue
+    fi
+
+    # Check if arcade core should be ignored
+    if is_core_ignored "$setname"; then
+      log "Ignoring arcade core: $setname"
       continue
     fi
 
@@ -550,6 +596,12 @@ process_additional_arcade_profiles() {
     [[ -z "$line" || "$line" == \#* ]] && continue
     filename=$(basename "$line" .zip)
 
+    # Check if additional arcade core should be ignored
+    if is_core_ignored "$filename"; then
+      log "Ignoring additional arcade core: $filename"
+      continue
+    fi
+
     # Sanitize core_name
     sanitized_core_name=$(sanitize_var_name "$filename")
     # Construct variable name
@@ -639,7 +691,8 @@ additional_handling() {
   done
 
   # Menu Core
-  dest_profile="${RT4K}profile/DV1/Menu.rt4"
+  if ! is_core_ignored "Menu"; then
+    dest_profile="${RT4K}profile/DV1/Menu.rt4"
   if [ -f "$dest_profile" ]; then
     if [ "$FORCE" -eq 1 ]; then
       log "Overwriting Menu.rt4 profile"
@@ -670,6 +723,9 @@ additional_handling() {
       echo "Error: Failed to create Menu.rt4 profile"
       errors=$((errors + 1))
     fi
+  fi
+  else
+    log "Ignoring Menu core as requested"
   fi
 }
 
