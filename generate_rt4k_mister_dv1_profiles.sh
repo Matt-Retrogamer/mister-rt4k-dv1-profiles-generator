@@ -161,8 +161,8 @@ else
 fi
 
 # Set Base Profiles (Console, Arcade) - Fallback to defaults if not set in override
-PRF_CONSOLE="${PRF_CONSOLE:-${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4}"
-PRF_ARCADE="${PRF_ARCADE:-${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4}"
+PRF_CONSOLE="${PRF_CONSOLE:-${RT4K}profile/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4}"
+PRF_ARCADE="${PRF_ARCADE:-${RT4K}profile/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4}"
 
 # Check if base profile files exist
 for profile in "$PRF_CONSOLE" "$PRF_ARCADE"; do

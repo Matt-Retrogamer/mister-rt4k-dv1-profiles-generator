@@ -1,8 +1,8 @@
 # profiles_config.sh
 
 # Set Base Profiles (Console, Arcade)
-PRF_CONSOLE="${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4"
-PRF_ARCADE="${RT4K}profile/_CRT Emulation/Kuro Houou - CRT Model Emulation/JVC D-Series-D200 - 4K HDR.rt4"
+PRF_CONSOLE="${RT4K}profile/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4"
+PRF_ARCADE="${RT4K}profile/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4"
 
 # Define portable profiles
 PRF_GBA="${RT4K}profile/Nintendo Switch/Billgonzo's GBC-GBA Profiles/Switch_GBA_13x.rt4"
