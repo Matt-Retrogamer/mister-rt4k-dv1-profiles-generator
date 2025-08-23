@@ -1,5 +1,8 @@
 # MiSTer RT4K DV1 Profiles Generator
 
+> **⚠️ Maintenance Notice**  
+> This project is not actively maintained. Updates are made on a best effort principle. Community contributions via pull requests are welcome, but response times may vary.
+
 ## Description
 
 The **MiSTer RT4K DV1 Profiles Generator** is a Bash script designed to automate the replication of profile files (`.rt4`) for the RetroTINK 4K device, specifically for use with the MiSTer FPGA system. This script simplifies the process of generating profiles for various MiSTer cores, ensuring that your RetroTINK 4K is correctly configured to display them.
