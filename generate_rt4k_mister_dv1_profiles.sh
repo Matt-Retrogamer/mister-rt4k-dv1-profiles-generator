@@ -209,11 +209,14 @@ fi
 # Function to check if a core should be ignored
 is_core_ignored() {
   local core_name="$1"
-  for ignored_core in "${IGNORE_CORES_ARRAY[@]}"; do
-    if [[ "$core_name" == "$ignored_core" ]]; then
-      return 0  # Core is ignored
-    fi
-  done
+  # Check if array has elements before iterating
+  if [ ${#IGNORE_CORES_ARRAY[@]} -gt 0 ]; then
+    for ignored_core in "${IGNORE_CORES_ARRAY[@]}"; do
+      if [[ "$core_name" == "$ignored_core" ]]; then
+        return 0  # Core is ignored
+      fi
+    done
+  fi
   return 1  # Core is not ignored
 }
 
