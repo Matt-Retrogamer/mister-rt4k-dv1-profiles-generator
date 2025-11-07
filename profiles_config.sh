@@ -1,8 +1,8 @@
 # profiles_config.sh
 
 # Set Base Profiles (Console, Arcade)
-PRF_CONSOLE="${RT4K}profile/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4"
-PRF_ARCADE="${RT4K}profile/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4"
+PRF_CONSOLE="${RT4K}profile/_CRT Emulation/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4"
+PRF_ARCADE="${RT4K}profile/_CRT Emulation/CRT TV and PVM Emulation by Kuro Houou/JVC D-Series-D200 - 4K HDR.rt4"
 
 # Cores to ignore (comma-separated list)
 # Example: IGNORE_CORES_FROM_CONFIG="Menu,TurboGrafx16,GameBoy"

@@ -211,7 +211,7 @@ is_core_ignored() {
   local core_name="$1"
   # Check if array has elements before iterating
   # Use [@]:-  to handle empty arrays with set -u
-  if [ ${#IGNORE_CORES_ARRAY[@]:-0} -gt 0 ]; then
+  if [ -n "${IGNORE_CORES_ARRAY:-}" ] && [ ${#IGNORE_CORES_ARRAY[@]} -gt 0 ]; then
     for ignored_core in "${IGNORE_CORES_ARRAY[@]:-}"; do
       if [[ "$core_name" == "$ignored_core" ]]; then
         return 0  # Core is ignored
