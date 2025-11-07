@@ -212,7 +212,7 @@ is_core_ignored() {
   # Check if array has elements before iterating
   # Use [@]:-  to handle empty arrays with set -u
   if [ -n "${IGNORE_CORES_ARRAY:-}" ] && [ ${#IGNORE_CORES_ARRAY[@]} -gt 0 ]; then
-    for ignored_core in "${IGNORE_CORES_ARRAY[@]}"; do
+    for ignored_core in "${IGNORE_CORES_ARRAY[@]:-}"; do
       if [[ "$core_name" == "$ignored_core" ]]; then
         return 0  # Core is ignored
       fi
